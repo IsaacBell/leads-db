@@ -37,7 +37,7 @@ jobs:
       env:
         SSH_REMOTE_SERVER_KEY: ${{ secrets.SSH_REMOTE_SERVER_KEY }}
       run: |    
-        cd /tmp/
+        # cd /tmp/
         echo "$SSH_REMOTE_SERVER_KEY" > /tmp/sshkey
         chmod 600 /tmp/sshkey
         
@@ -46,7 +46,7 @@ jobs:
         
     - name: Merge collected zones
       run: | 
-        cd /tmp/
+        # cd /tmp/
         python -Wall "$GITHUB_WORKSPACE/(internal)/daily_merge.py" -f "/tmp/zones" -r "$ZONES_DIR"
       
     - name: Generate today_new and yesterday_new files 
