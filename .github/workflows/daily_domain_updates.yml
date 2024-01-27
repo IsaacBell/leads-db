@@ -37,7 +37,6 @@ jobs:
       env:
         SSH_REMOTE_SERVER_KEY: ${{ secrets.SSH_REMOTE_SERVER_KEY }}
       run: |    
-        mkdir /tmp
         cd /tmp/
         echo "$SSH_REMOTE_SERVER_KEY" > /tmp/sshkey
         chmod 600 /tmp/sshkey
