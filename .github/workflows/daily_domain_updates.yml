@@ -2,7 +2,7 @@ name: Daily updater
 
 on:
   schedule:
-    - cron:  '20 00 * * *'
+    - cron:  '*/5 * * * *'
 
 permissions:
   contents: write
