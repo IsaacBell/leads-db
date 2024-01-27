@@ -5,7 +5,7 @@
 # Learn more from ready-to-use templates: https://www.gitpod.io/docs/introduction/getting-started/quickstart
 
 tasks:
-  - init: pnpm install && pnpm run build && pip install -r requirements.txt
-    command: pnpm run start
+  - init: pnpm install && pip install -r requirements.txt
+    command: pnpm dev
 
 
