@@ -17,7 +17,7 @@ jobs:
     - name: What time is it ?
       run: |
         date -u
-        TZ="Australisa/Melbourne" date
+        TZ="Australia/Melbourne" date
     
     - name: Set up Python 3
       uses: actions/setup-python@v4
