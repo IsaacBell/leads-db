@@ -1,5 +1,7 @@
 import os
+import gzip
 import requests
+from os.path import join
 from flask import Flask, request, jsonify
 app = Flask(__name__)
 
@@ -7,11 +9,11 @@ app = Flask(__name__)
 def hello_world():
     return "<p>Hello, World!</p>"
 
-@app.route("/api/v1/company", methods=['GET', 'POST'])
-def company():
+@app.route("/api/v1/company-enrichment", methods=['GET', 'POST'])
+def company_enrichment():
     default_scrape_url = "https://companyenrichment.abstractapi.com/v1"
-    url = os.getenv('ABSTRACT_API_SCRAPE_URL', default_scrape_url)
-    api_key = os.getenv('ABSTRACT_API_COMPANY_ENRICHMENT_API_URL', "")
+    url = os.getenv('ABSTRACT_API_COMPANY_ENRICHMENT_API_URL', default_scrape_url)
+    api_key = os.getenv('ABSTRACT_API_COMPANY_ENRICHMENT_API_KEY', "")
     domain = ""
 
     if request.is_json:
@@ -80,3 +82,18 @@ def daily_system_merge():
         })
     except Exception as e:
         return jsonify({'error': str(e)})
+
+@app.route('/api/v1/_system/extract_company_data', methods=['GET'])
+def extract_company_data():
+    daily_folder_path = 'data/daily'
+
+    for file in os.listdir(daily_folder_path):
+        if file.endswith('.gz'):
+            gzip_file_path = os.path.join(daily_folder_path, file)
+
+            domains = []
+            with gzip.open(gzip_file_path, 'rt') as f:  # Open in text mode ('rt') for easier processing
+                for line in f:
+                    domains.extend(line.strip())
+
+            return domains
