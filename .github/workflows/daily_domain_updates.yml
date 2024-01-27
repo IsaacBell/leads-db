@@ -1,0 +1,71 @@
+name: Daily updater
+
+on:
+  schedule:
+    - cron:  '20 00 * * *'
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: What time is it ?
+      run: |
+        date -u
+        TZ="America/Chicago" date
+    
+    - name: Set up Python 3
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+    
+    - name: Install prerequisites
+      run: |
+        sudo apt -qq install fd-find
+
+    - name: Prepare global variables
+      run: | 
+        echo "ZONES_DIR=$GITHUB_WORKSPACE/data/zones" >> $GITHUB_ENV
+        echo "DAILY_DIR=$GITHUB_WORKSPACE/data/daily" >> $GITHUB_ENV
+    
+    - name: Rsync data
+      env:
+        SSH_REMOTE_SERVER_KEY: ${{ secrets.SSH_REMOTE_SERVER_KEY }}
+      run: |    
+        cd /tmp/
+        echo "$SSH_REMOTE_SERVER_KEY" > /tmp/sshkey
+        chmod 600 /tmp/sshkey
+        
+        # rsynced data is in /tmp/zones
+        rsync --stats -az -e "ssh -o LogLevel=quiet -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i /tmp/sshkey" dailynrdscan@ssh-dailynrdscan.alwaysdata.net:/home/dailynrdscan/www/zones .
+        
+    - name: Merge collected zones
+      run: | 
+        cd /tmp/
+        python -Wall "$GITHUB_WORKSPACE/api/(internal)/daily_merge.py" -f "/tmp/zones" -r "$ZONES_DIR"
+      
+    - name: Generate today_new and yesterday_new files 
+      run: |
+        cd "$DAILY_DIR"
+        (fdfind -a -g 'today_new.gz' "$ZONES_DIR" -x zcat) | tee | gzip > "./today_new.gz"
+        (fdfind -a -g 'yesterday_new.gz' "$ZONES_DIR" -x zcat) | tee | gzip > "./yesterday_new.gz"
+          
+    - name: Git commit 
+      run: |
+        git config user.name updating-bot
+        git config user.email github-actions@github.com
+        
+        cd "$ZONES_DIR"
+        git add ./*
+        
+        cd "$DAILY_DIR"
+        git add "./today_new.gz" "./yesterday_new.gz" 
+        
+        git commit -a -m "updating bot - $(date '+%Y/%m/%d')"
+        git pull
+        git push
