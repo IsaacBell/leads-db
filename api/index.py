@@ -1,6 +1,8 @@
 import os
 import gzip
 import requests
+import subprocess
+import urllib.parse
 from os.path import join
 from flask import Flask, request, jsonify
 app = Flask(__name__)
@@ -21,11 +23,10 @@ def company_enrichment():
         domain = data.get('domain')
     else:
         domain = request.form.get('domain')
-
-    querystring = {"url": target_url, "api_key": api_key, "domain": domain}
+    app.logger.info(f"{url}/?api_key={api_key}&domain={domain}")
 
     try:
-        response = requests.get(url, params=querystring)
+        response = requests.get(f"{url}/?api_key={api_key}&domain={domain}")
         response.raise_for_status()
         return response.content
     except requests.RequestException as e:
@@ -34,8 +35,9 @@ def company_enrichment():
 @app.route("/api/v1/scrape", methods=['GET', 'POST'])
 def scrape():
     default_scrape_url = "https://scrape.abstractapi.com/v1"
-    url = os.getenv('ABSTRACT_API_SCRAPE_URL', default_scrape_url)
-    api_key = os.getenv('ABSTRACT_API_SCRAPE_URL', "")
+    api_url = os.getenv('ABSTRACT_API_SCRAPE_URL', default_scrape_url)
+    api_key = os.getenv('ABSTRACT_API_SCRAPE_API_KEY', "")
+    target_url = ""
 
     if request.is_json:
         data = request.json
@@ -47,27 +49,25 @@ def scrape():
         render_js = request.form.get('render_js', 'true')
         block_ads = request.form.get('block_ads', 'true')
 
-    querystring = {"url": target_url, "api_key": api_key, "render_js": render_js, "block_ads": block_ads}
-
     try:
-        response = requests.get(url, params=querystring)
+        abstractapi = f"{api_url}/?url={target_url}&api_key={api_key}"
+        app.logger.info(abstractapi)
+        response = requests.get(abstractapi)
+        app.logger.info(response)
         response.raise_for_status()
-        return response.text
+        return response.content
     except requests.RequestException as e:
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/v1/_system/daily_merge', methods=['POST'])
 def daily_system_merge():
-    # fresh_dir = request.form.get('fresh_dir')
-    # referential_dir = request.form.get('referential_dir')
-
     command = [
         'python', 
-        './(internal)/daily_merge.py', 
+        '(internal)/daily_merge.py', 
         '--fresh-dir', 
         "/tmp/zones", 
         '--referential-dir', 
-        "../data/zones"
+        "data/zones"
     ]
     
     try:
@@ -85,9 +85,11 @@ def daily_system_merge():
 
 @app.route('/api/v1/_system/extract_company_data', methods=['GET'])
 def extract_company_data():
-    daily_folder_path = 'data/daily'
+    daily_folder_path = join('data', 'daily')
+    app.logger.info(daily_folder_path)
 
     for file in os.listdir(daily_folder_path):
+        app.logger.info(file)
         if file.endswith('.gz'):
             gzip_file_path = os.path.join(daily_folder_path, file)
 
@@ -97,3 +99,4 @@ def extract_company_data():
                     domains.extend(line.strip())
 
             return domains
+    return []
