@@ -47,7 +47,7 @@ jobs:
     - name: Merge collected zones
       run: | 
         cd /tmp/
-        python -Wall "$GITHUB_WORKSPACE/api/(internal)/daily_merge.py" -f "/tmp/zones" -r "$ZONES_DIR"
+        python -Wall "$GITHUB_WORKSPACE/(internal)/daily_merge.py" -f "/tmp/zones" -r "$ZONES_DIR"
       
     - name: Generate today_new and yesterday_new files 
       run: |
