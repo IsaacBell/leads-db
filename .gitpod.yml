@@ -6,6 +6,6 @@
 
 tasks:
   - init: pnpm install && pip install -r requirements.txt
-    command: pnpm dev
+    command: pnpm run dev
 
 
