@@ -18,7 +18,7 @@ jobs:
     - name: What time is it ?
       run: |
         date -u
-        TZ="Australia/Melbourne" date
+        TZ="Europe/Paris" date
     
     - name: Set up Python 3
       uses: actions/setup-python@v4
@@ -42,7 +42,7 @@ jobs:
         # chmod 600 sshkey
         
         # # rsynced data is in ../tmp/zones
-        # rsync --stats -az -e "ssh -o LogLevel=quiet -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ..sshkey dailynrdscan@ssh-dailynrdscan.alwaysdata.net:/home/dailynrdscan/www/zones .
+        # rsync --stats -az -e "ssh -o LogLevel=quiet -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ..sshkey" dailynrdscan@ssh-dailynrdscan.alwaysdata.net:/home/dailynrdscan/www/zones .
         
     - name: Merge collected zones
       run: | 
