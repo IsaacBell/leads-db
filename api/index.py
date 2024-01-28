@@ -9,7 +9,7 @@ app = Flask(__name__)
 
 @app.route("/api/heartbeat")
 def hello_world():
-    return "<p>Hello, World!</p>"
+    return "<p>OK</p>"
 
 @app.route("/api/v1/company-enrichment", methods=['GET', 'POST'])
 def company_enrichment():
