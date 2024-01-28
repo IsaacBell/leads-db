@@ -11,6 +11,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@astrajs/client": "^0.3.4",
+    "@datastax/astra-db-ts": "^0.1.4",
     "@types/node": "20.1.4",
     "@types/react": "18.2.6",
     "@types/react-dom": "18.2.4",
