@@ -36,6 +36,7 @@ jobs:
     
     - name: Sync data
       run: |    
+        mkdir -p "$DAILY_DIR"
         wget -nv "https://raw.githubusercontent.com/maaaaz/dnsdumps/main/daily/today_new.gz" -O "$DAILY_DIR/today_new.gz"
         wget -nv "https://raw.githubusercontent.com/maaaaz/dnsdumps/main/daily/yesterday_new.gz" -O "$DAILY_DIR/yesterday_new.gz"
         
