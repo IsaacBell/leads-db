@@ -105,6 +105,16 @@ def extract_company_data():
             return domains
     return []
 
+@app.route('/api/v1/companies/<id>', methods=['GET'])
+def get_company(id):
+    db = AstraDBClient()
+    return db.find(id)
+
+@app.route('/api/v1/companies_by_name/<name>', methods=['GET'])
+def get_company_by_name(name):
+    db = AstraDBClient()
+    return db.find_by_name(name)
+
 @app.route('/api/v1/companies', methods=['POST'])
 def insert_company():
     db = AstraDBClient()

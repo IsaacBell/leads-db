@@ -7,3 +7,4 @@ python-dotenv
 langchain_community
 spacy
 pinecone-client
+multipledispatch

@@ -1,11 +1,16 @@
 import os
 import json
 from dotenv import load_dotenv
+from multipledispatch import dispatch
+from collections import namedtuple
+from types import *
 
 from astrapy.db import AstraDB, AstraDBCollection
 from astrapy.ops import AstraDBOps
 
 from langchain_community.embeddings.spacy_embeddings import SpacyEmbeddings
+
+AstraDBTable = namedtuple('DBTable', ['companies'])
 
 # https://github.com/datastax/astrapy?tab=readme-ov-file
 class AstraDBClient:
@@ -45,8 +50,14 @@ class AstraDBClient:
   def insert_company(data):
     return insert(data)
 
-  def find(name):
+  def find_by_name(name):
     return client.find_one({"name": name})
+
+  def find_by_attrs(attrs):
+    return client.find_one(attrs)
+
+  def find(id):
+    return client.find_one({"_id": id})
 
   def search_by_name(name):
     return client.find_many({"name": name})
