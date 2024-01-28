@@ -38,11 +38,11 @@ jobs:
       env:
         SSH_REMOTE_SERVER_KEY: ${{ secrets.SSH_REMOTE_SERVER_KEY }}
       run: |    
-        echo "$SSH_REMOTE_SERVER_KEY" > /tmp/sshkey
-        chmod 600 /tmp/sshkey
+        echo "$SSH_REMOTE_SERVER_KEY" > sshkey
+        chmod 600 sshkey
         
         # rsynced data is in /tmp/zones
-        rsync --stats -az -e "ssh -o LogLevel=quiet -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i /tmp/sshkey" dailynrdscan@ssh-dailynrdscan.alwaysdata.net:/home/dailynrdscan/www/zones .
+        rsync --stats -az -e "ssh -o LogLevel=quiet -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i sshkey" dailynrdscan@ssh-dailynrdscan.alwaysdata.net:/home/dailynrdscan/www/zones .
         
     - name: Merge collected zones
       run: | 
