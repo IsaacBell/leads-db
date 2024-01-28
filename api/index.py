@@ -4,6 +4,9 @@ import requests
 import subprocess
 import urllib.parse
 from os.path import join
+
+from db import AstraDBClient
+
 from flask import Flask, request, jsonify
 app = Flask(__name__)
 
@@ -59,7 +62,7 @@ def scrape():
     except requests.RequestException as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/v1/_system/daily_merge', methods=['POST'])
+@app.route('/api/v1/_system/daily_merge', methods=['GET', 'POST'])
 def daily_system_merge():
     command = [
         'python', 
@@ -96,7 +99,19 @@ def extract_company_data():
             domains = []
             with gzip.open(gzip_file_path, 'rt') as f:  # Open in text mode ('rt') for easier processing
                 for line in f:
-                    domains.extend(line.strip())
+                    app.logger.info(line.strip())
+                    domains.append(line.strip())
 
             return domains
     return []
+
+@app.route('/api/v1/companies', methods=['POST'])
+def insert_company():
+    db = AstraDBClient()
+    if request.is_json:
+        data = request.json
+        company = data.get('company')
+    else:
+        company = request.form.get('company')
+
+    return db.insert_company(company)
