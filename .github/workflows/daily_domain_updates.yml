@@ -34,26 +34,11 @@ jobs:
         echo "ZONES_DIR=$GITHUB_WORKSPACE/data/zones" >> $GITHUB_ENV
         echo "DAILY_DIR=$GITHUB_WORKSPACE/data/daily" >> $GITHUB_ENV
     
-    - name: Rsync data
-      env:
-        SSH_REMOTE_SERVER_KEY: ${{ secrets.SSH_REMOTE_SERVER_KEY }}
+    - name: Sync data
       run: |    
-        # echo "$SSH_REMOTE_SERVER_KEY" > sshkey
-        # chmod 600 sshkey
+        wget -nv "https://raw.githubusercontent.com/maaaaz/dnsdumps/main/daily/today_new.gz" -O "$DAILY_DIR/today_new.gz"
+        wget -nv "https://raw.githubusercontent.com/maaaaz/dnsdumps/main/daily/yesterday_new.gz" -O "$DAILY_DIR/yesterday_new.gz"
         
-        # # rsynced data is in ../tmp/zones
-        # rsync --stats -az -e "ssh -o LogLevel=quiet -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ..sshkey" dailynrdscan@ssh-dailynrdscan.alwaysdata.net:/home/dailynrdscan/www/zones .
-        
-    - name: Merge collected zones
-      run: | 
-        python -Wall "$GITHUB_WORKSPACE/(internal)/daily_merge.py" -f "/tmp/zones" -r "$ZONES_DIR"
-      
-    - name: Generate today_new and yesterday_new files 
-      run: |
-        cd "$DAILY_DIR"
-        (fdfind -a -g 'today_new.gz' "$ZONES_DIR" -x zcat) | tee | gzip > "./today_new.gz"
-        (fdfind -a -g 'yesterday_new.gz' "$ZONES_DIR" -x zcat) | tee | gzip > "./yesterday_new.gz"
-          
     - name: Git commit 
       run: |
         git config user.name updating-bot
