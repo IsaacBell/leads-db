@@ -4,7 +4,7 @@ from pinecone import Pinecone, ServerlessSpec
 class Pinecone:
   client = None
 
-  def __init__():
+  def __init__(self):
     client = client()
 
   def existing_indexes():
