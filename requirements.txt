@@ -6,6 +6,7 @@ pandas
 datapackage
 python-dotenv
 langchain_community
-spacy
 pinecone-client
 multipledispatch
+spacy
+en_core_web_md

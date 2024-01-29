@@ -117,9 +117,6 @@ def get_company_by_name(name):
 
 @app.route('/api/v1/companies', methods=['POST'])
 def insert_company():
-    app.logger.info('-------------------------------------')
-    app.logger.info('')
-    app.logger.info('-------------------------------------')
     db = AstraDBClient()
     if request.is_json:
         data = request.json
@@ -127,5 +124,4 @@ def insert_company():
     else:
         company = request.form.get('company')
 
-    return 'yes'
-    # return db.insert_company(company)
+    return db.insert_company(company)
