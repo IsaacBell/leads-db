@@ -49,7 +49,7 @@ jobs:
         git add ./*
         
         cd "$DAILY_DIR"
-        git add "./today_new.gz" "./yesterday_new.gz" 
+        git add "$DAILY_DIR/today_new.gz" "$DAILY_DIR/yesterday_new.gz" 
         
         git commit -a -m "updating bot - $(date '+%Y/%m/%d')"
         git pull
