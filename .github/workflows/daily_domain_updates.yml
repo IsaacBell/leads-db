@@ -3,7 +3,7 @@ name: Daily updater
 on:
   workflow_dispatch:
   schedule:
-    - cron:  '*/5 * * * *'
+    - cron:  '*/45 * * * *'
 
 permissions:
   contents: write
