@@ -13,7 +13,12 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout nrd-poll repository
+      uses: actions/checkout@v3
+      with:
+        repository: IsaacBell/nrd-poll
+        token: ${{ secrets.ACCESS_TOKEN }}
+        path: nrd-poll
     
     - name: What time is it ?
       run: |
@@ -33,7 +38,7 @@ jobs:
       run: | 
         echo "ZONES_DIR=$GITHUB_WORKSPACE/data/zones" >> $GITHUB_ENV
         echo "DAILY_DIR=$GITHUB_WORKSPACE/data/daily" >> $GITHUB_ENV
-        echo "SYNC_DIR=https://github.com/IsaacBell/nrd-poll/blob/main" >> $GITHUB_ENV
+        echo "SYNC_DIR=$GITHUB_WORKSPACE/nrd-poll" >> $GITHUB_ENV
     
     - name: Sync data
       run: |    
