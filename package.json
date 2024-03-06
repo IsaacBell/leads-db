@@ -5,9 +5,9 @@
   "scripts": {
     "flask-dev": "FLASK_DEBUG=1 pip3 install -r requirements.txt && python3 -m flask --debug --app api/index run -p 5328",
     "next-dev": "next dev",
-    "dev": "concurrently \"pnpm run next-dev\" \"pnpm run flask-dev\"",
+    "dev":   "concurrently \"pnpm run next-dev\" \"pnpm run flask-dev\"",
+    "start": "concurrently \"pnpm run next-dev\" \"pnpm run flask-dev\"",
     "build": "next build",
-    "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {

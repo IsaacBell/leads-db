@@ -15,6 +15,16 @@ logging.basicConfig()
 logging.getLogger('apscheduler').setLevel(logging.DEBUG)
 
 def company_enrichment(domain):
+    """
+    Retrieves company data from the Abstract API using the provided domain.
+
+    Args:
+        domain (str): The domain name for which to retrieve company data.
+
+    Returns:
+        bytes: The response content from the API if the request is successful.
+        tuple: A JSON error message and a status code of 500 if an exception occurs.
+    """
     default_scrape_url = "https://companyenrichment.abstractapi.com/v1"
     url = os.getenv('ABSTRACT_API_COMPANY_ENRICHMENT_API_URL', default_scrape_url)
     api_key = os.getenv('ABSTRACT_API_COMPANY_ENRICHMENT_API_KEY', "")
@@ -27,6 +37,12 @@ def company_enrichment(domain):
         return jsonify({"error": str(e)}), 500
 
 def ingestions():
+    """
+    Reads domain names from gzip files in the 'data/daily' directory.
+
+    Returns:
+        list: A list of domain names extracted from the gzip files.
+    """
     daily_folder_path = join('data', 'daily')
     app.logger.info(daily_folder_path)
 
@@ -43,9 +59,17 @@ def ingestions():
     return domains
 
 def ingest_daily_company_data():
+    """
+    Orchestrates the daily ingestion of company data.
+
+    Retrieves domain names from gzip files using the `ingestions` function,
+    fetches company data for each domain using the `company_enrichment` function,
+    and inserts the data into the database using an instance of `AstraDBClient`.
+    """
     db = AstraDBClient()
     for domain in ingestions():
         company = company_enrichment(domain)
+        # if scraped_html
         db.insert_company(company) 
 
 scheduler = BackgroundScheduler()
@@ -58,7 +82,7 @@ app = Flask(__name__)
 def hello_world():
     return "<p>OK</p>"
 
-@app.route("/api/v1/company-enrichment", methods=['GET', 'POST'])
+@app.route("/api/v1/company-enrichment", methods=['GET'])
 def company_enrichment():
     default_scrape_url = "https://companyenrichment.abstractapi.com/v1"
     url = os.getenv('ABSTRACT_API_COMPANY_ENRICHMENT_API_URL', default_scrape_url)
