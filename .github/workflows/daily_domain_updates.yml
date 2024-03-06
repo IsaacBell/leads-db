@@ -48,6 +48,7 @@ jobs:
         
     - name: Git commit
       run: |
+        echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE"
         cd ..
         pwd
         git config user.name IsaacBell
