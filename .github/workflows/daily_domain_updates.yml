@@ -17,7 +17,7 @@ jobs:
       uses: actions/checkout@v3
       with:
         repository: IsaacBell/nrd-poll
-        token: ${{ secrets.ACCESS_TOKEN }}
+        token: ${{ secrets.SYNC_TOKEN }}
         path: nrd-poll
     
     - name: What time is it ?
