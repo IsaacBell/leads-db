@@ -41,10 +41,10 @@ jobs:
         echo "SYNC_DIR=$GITHUB_WORKSPACE/nrd-poll" >> $GITHUB_ENV
     
     - name: Sync data
-      run: |    
+      run: |
         mkdir -p "$DAILY_DIR"
-        wget -nv "$SYNC_DIR/today_new.gz" -O "$DAILY_DIR/today_new.gz"
-        wget -nv "$SYNC_DIR/yesterday_new.gz" -O "$DAILY_DIR/yesterday_new.gz"
+        cp "$SYNC_DIR/today_new.gz" "$DAILY_DIR/today_new.gz"
+        cp "$SYNC_DIR/yesterday_new.gz" "$DAILY_DIR/yesterday_new.gz"
         
     - name: Git commit 
       run: |
