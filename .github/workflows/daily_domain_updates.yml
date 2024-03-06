@@ -48,16 +48,18 @@ jobs:
         
     - name: Git commit
       run: |
-        cd $DAILY_DIR
+        cd $GITHUB_WORKSPACE # Change to the leads-db repository directory
         git config user.name IsaacBell
         git config user.email isaacbell388@gmail.com
-        
+    
+        # Add files from ZONES_DIR
         cd "$ZONES_DIR"
         git add ./*
-        
-        cd "$DAILY_DIR"
+    
+        # Add files from DAILY_DIR
+        cd "$GITHUB_WORKSPACE" # Return to the leads-db repository directory
         git add "$DAILY_DIR/today_new.gz" "$DAILY_DIR/yesterday_new.gz"
-        
+    
         git commit -a -m "updating bot - $(date '+%Y/%m/%d')"
         git pull
         git push
