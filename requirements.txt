@@ -1,5 +1,6 @@
 Flask==2.2.2
 Werkzeug==2.2.2
+APScheduler
 pulsar-client
 astrapy
 pandas
@@ -9,4 +10,3 @@ langchain_community
 pinecone-client
 multipledispatch
 spacy
-en_core_web_md

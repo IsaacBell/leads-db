@@ -1,13 +1,57 @@
 import os
 import gzip
+import time
+import atexit
+import logging
 import requests
 import subprocess
 import urllib.parse
 from os.path import join
-
 from db import AstraDBClient
-
+from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask, request, jsonify
+
+logging.basicConfig()
+logging.getLogger('apscheduler').setLevel(logging.DEBUG)
+
+def company_enrichment(domain):
+    default_scrape_url = "https://companyenrichment.abstractapi.com/v1"
+    url = os.getenv('ABSTRACT_API_COMPANY_ENRICHMENT_API_URL', default_scrape_url)
+    api_key = os.getenv('ABSTRACT_API_COMPANY_ENRICHMENT_API_KEY', "")
+
+    try:
+        response = requests.get(f"{url}/?api_key={api_key}&domain={domain}")
+        response.raise_for_status()
+        return response.content
+    except requests.RequestException as e:
+        return jsonify({"error": str(e)}), 500
+
+def ingestions():
+    daily_folder_path = join('data', 'daily')
+    app.logger.info(daily_folder_path)
+
+    domains = []
+    for file in os.listdir(daily_folder_path):
+        app.logger.info(file)
+        if file.endswith('.gz'):
+            gzip_file_path = os.path.join(daily_folder_path, file)
+
+            with gzip.open(gzip_file_path, 'rt') as f:  # Open in text mode ('rt') for easier processing
+                for line in f:
+                    app.logger.info(line.strip())
+                    domains.append(line.strip())
+    return domains
+
+def ingest_daily_company_data():
+    db = AstraDBClient()
+    for domain in ingestions():
+        company = company_enrichment(domain)
+        db.insert_company(company) 
+
+scheduler = BackgroundScheduler()
+scheduler.add_job(func=ingest_daily_company_data, trigger="interval", hours=12)
+scheduler.start()
+
 app = Flask(__name__)
 
 @app.route("/api/heartbeat")
@@ -86,24 +130,24 @@ def daily_system_merge():
     except Exception as e:
         return jsonify({'error': str(e)})
 
-@app.route('/api/v1/_system/extract_company_data', methods=['GET'])
-def extract_company_data():
+# daily new registered domains (NRDs)
+# returns an array of strings
+@app.route('/api/v1/_system/ingestions', methods=['GET'])
+def ingestions():
     daily_folder_path = join('data', 'daily')
     app.logger.info(daily_folder_path)
 
+    domains = []
     for file in os.listdir(daily_folder_path):
         app.logger.info(file)
         if file.endswith('.gz'):
             gzip_file_path = os.path.join(daily_folder_path, file)
 
-            domains = []
             with gzip.open(gzip_file_path, 'rt') as f:  # Open in text mode ('rt') for easier processing
                 for line in f:
                     app.logger.info(line.strip())
                     domains.append(line.strip())
-
-            return domains
-    return []
+    return domains
 
 @app.route('/api/v1/companies/<id>', methods=['GET'])
 def get_company(id):
@@ -125,3 +169,58 @@ def insert_company():
         company = request.form.get('company')
 
     return db.insert_company(company)
+
+@app.route('/api/v1/subscribe', methods=['POST'])
+def add_notion_subscriber():
+    notion_token = os.getenv('NOTION_TOKEN', '')
+    notion_db_id = os.getenv('NOTION_DB_ID', '')
+    notion_version = '2022-06-28'
+    headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {notion_token}',
+        'Notion-Version': notion_version,
+    }
+    print('token')
+    print(notion_token)
+    print('\ndbid')
+    print(notion_db_id)
+
+    # Since Flask does not support await, we will not use async here and will use requests synchronously
+    try:
+        # First request to get an access token, assuming this endpoint exists and works as intended
+        auth_response = requests.get('https://api.notion.com/v1/oauth/databases', headers=headers, json={'grant_type': 'authorization_code'})
+        auth_response.raise_for_status()  # This will raise an exception for HTTP errors
+        token_data = auth_response.json()
+        access_token = token_data.get('access_token')
+        print('**********************')
+        print(auth_response)
+        print('**********************')
+
+        # Update Authorization header with the new access token
+        headers['Authorization'] = f'Bearer {access_token}'
+
+        # Second request to create a page in Notion
+        page_creation_payload = {
+            'parent': {'database_id': notion_db_id},
+            'properties': {
+                'Email': {
+                    'title': [
+                        {
+                            'text': {
+                                'content': request.json.get('email', 'isaacbell388@gmail.com'),
+                            },
+                        },
+                    ],
+                },
+            },
+        }
+        page_response = requests.post('https://api.notion.com/v1/pages', headers=headers, json=page_creation_payload)
+        page_response.raise_for_status() 
+
+        return jsonify(page_response.json()), 200
+    except requests.RequestException as e:
+        return jsonify({'error': str(e)}), 500
+
+# Shut down the scheduler when exiting the app
+atexit.register(lambda: scheduler.shutdown())

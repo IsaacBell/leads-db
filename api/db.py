@@ -21,7 +21,6 @@ class AstraDBClient:
   streaming_client = None
   company_creation_producer = None
   companies_cdc_topic = 'persistent://leads/default/companies-cdc'
-  embedder = SpacyEmbeddings()
 
   def __init__(self):
     load_dotenv()
