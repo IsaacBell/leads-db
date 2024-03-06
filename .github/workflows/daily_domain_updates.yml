@@ -48,7 +48,8 @@ jobs:
         
     - name: Git commit
       run: |
-        cd $GITHUB_WORKSPACE # Change to the leads-db repository directory
+        pwd
+        cd $GITHUB_WORKSPACE
         git config user.name IsaacBell
         git config user.email isaacbell388@gmail.com
     
