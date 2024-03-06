@@ -5,7 +5,7 @@
   "scripts": {
     "flask-dev": "FLASK_DEBUG=1 pip3 install -r requirements.txt && python3 -m flask --debug --app api/index run -p 5328",
     "next-dev": "next dev",
-    "dev":   "concurrently \"pnpm run next-dev\" \"pnpm run flask-dev\"",
+    "dev": "concurrently \"pnpm run next-dev\" \"pnpm run flask-dev\"",
     "start": "concurrently \"pnpm run next-dev\" \"pnpm run flask-dev\"",
     "build": "next build",
     "lint": "next lint"
@@ -21,6 +21,7 @@
     "eslint": "8.40.0",
     "eslint-config-next": "13.4.2",
     "next": "13.4.3",
+    "notistack": "^3.0.1",
     "postcss": "8.4.23",
     "react": "18.2.0",
     "react-dom": "18.2.0",
