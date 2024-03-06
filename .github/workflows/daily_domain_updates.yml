@@ -33,12 +33,13 @@ jobs:
       run: | 
         echo "ZONES_DIR=$GITHUB_WORKSPACE/data/zones" >> $GITHUB_ENV
         echo "DAILY_DIR=$GITHUB_WORKSPACE/data/daily" >> $GITHUB_ENV
+        echo "SYNC_DIR=https://github.com/IsaacBell/nrd-poll/blob/main/today_new.gz" >> $GITHUB_ENV
     
     - name: Sync data
       run: |    
         mkdir -p "$DAILY_DIR"
-        wget -nv "https://raw.githubusercontent.com/maaaaz/dnsdumps/main/daily/today_new.gz" -O "$DAILY_DIR/today_new.gz"
-        wget -nv "https://raw.githubusercontent.com/maaaaz/dnsdumps/main/daily/yesterday_new.gz" -O "$DAILY_DIR/yesterday_new.gz"
+        wget -nv "$SYNC_DIR/today_new.gz" -O "$DAILY_DIR/today_new.gz"
+        wget -nv "$SYNC_DIR/yesterday_new.gz" -O "$DAILY_DIR/yesterday_new.gz"
         
     - name: Git commit 
       run: |
