@@ -49,7 +49,6 @@ jobs:
     - name: Git commit
       run: |
         pwd
-        cd $GITHUB_WORKSPACE
         git config user.name IsaacBell
         git config user.email isaacbell388@gmail.com
     
