@@ -1,66 +1,18 @@
-name: Daily updater
-
-on:
-  workflow_dispatch:
-  schedule:
-    - cron:  '*/45 * * * *'
-
-permissions:
-  contents: write
-
-jobs:
-  update:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout nrd-poll repository
-      uses: actions/checkout@v3
-      with:
-        repository: IsaacBell/nrd-poll
-        token: ${{ secrets.SYNC_TOKEN }}
-        path: nrd-poll
-    
-    - name: What time is it ?
-      run: |
-        date -u
-        TZ="Europe/Paris" date
-    
-    - name: Set up Python 3
-      uses: actions/setup-python@v4
-      with:
-        python-version: "3.11"
-    
-    - name: Install prerequisites
-      run: |
-        sudo apt -qq install fd-find
-
-    - name: Prepare global variables
-      run: | 
-        echo "ZONES_DIR=$GITHUB_WORKSPACE/data/zones" >> $GITHUB_ENV
-        echo "DAILY_DIR=$GITHUB_WORKSPACE/data/daily" >> $GITHUB_ENV
-        echo "SYNC_DIR=$GITHUB_WORKSPACE/nrd-poll" >> $GITHUB_ENV
-    
-    - name: Sync data
-      run: |
-        mkdir -p "$DAILY_DIR"
-        cp "$SYNC_DIR/today_new.gz" "$DAILY_DIR/today_new.gz"
-        cp "$SYNC_DIR/yesterday_new.gz" "$DAILY_DIR/yesterday_new.gz"
-        
-    - name: Git commit
-      run: |
-        echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE"
-        pwd
-        git config user.name IsaacBell
-        git config user.email isaacbell388@gmail.com
-    
-        # Add files from ZONES_DIR
-        cd "$ZONES_DIR"
-        git add ./*
-    
-        # Add files from DAILY_DIR
-        cd "$GITHUB_WORKSPACE" # Return to the leads-db repository directory
-        git add "$DAILY_DIR/today_new.gz" "$DAILY_DIR/yesterday_new.gz"
-    
-        git commit -a -m "updating bot - $(date '+%Y/%m/%d')"
-        git pull
-        git push
+run: |
+  mkdir -p "/home/runner/work/leads-db/leads-db"
+  cd "/home/runner/work/leads-db/leads-db"
+  git init
+  git config user.name IsaacBell
+  git config user.email isaacbell388@gmail.com
+  
+  # Add files from ZONES_DIR
+  cd "$ZONES_DIR"
+  git add ./*
+  
+  # Add files from DAILY_DIR
+  cd "$GITHUB_WORKSPACE" # Return to the leads-db repository directory
+  git add "$DAILY_DIR/today_new.gz" "$DAILY_DIR/yesterday_new.gz"
+  
+  git commit -a -m "updating bot - $(date '+%Y/%m/%d')"
+  git pull
+  git push
