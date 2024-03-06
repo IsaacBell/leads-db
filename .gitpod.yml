@@ -5,7 +5,8 @@
 # Learn more from ready-to-use templates: https://www.gitpod.io/docs/introduction/getting-started/quickstart
 
 tasks:
-  - init: pnpm install && pip install -r requirements.txt
+  - before: python -m spacy download en_core_web_md
+    init: pnpm install && pip install -r requirements.txt
     command: pnpm run dev
 
 
