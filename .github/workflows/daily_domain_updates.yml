@@ -33,7 +33,7 @@ jobs:
       run: | 
         echo "ZONES_DIR=$GITHUB_WORKSPACE/data/zones" >> $GITHUB_ENV
         echo "DAILY_DIR=$GITHUB_WORKSPACE/data/daily" >> $GITHUB_ENV
-        echo "SYNC_DIR=https://github.com/IsaacBell/nrd-poll/blob/main/today_new.gz" >> $GITHUB_ENV
+        echo "SYNC_DIR=https://github.com/IsaacBell/nrd-poll/blob/main" >> $GITHUB_ENV
     
     - name: Sync data
       run: |    
