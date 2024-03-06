@@ -46,8 +46,9 @@ jobs:
         cp "$SYNC_DIR/today_new.gz" "$DAILY_DIR/today_new.gz"
         cp "$SYNC_DIR/yesterday_new.gz" "$DAILY_DIR/yesterday_new.gz"
         
-    - name: Git commit 
+    - name: Git commit
       run: |
+        cd $GITHUB_WORKSPACE # Change to the leads-db repository directory
         git config user.name IsaacBell
         git config user.email isaacbell388@gmail.com
         
@@ -55,7 +56,7 @@ jobs:
         git add ./*
         
         cd "$DAILY_DIR"
-        git add "$DAILY_DIR/today_new.gz" "$DAILY_DIR/yesterday_new.gz" 
+        git add "$DAILY_DIR/today_new.gz" "$DAILY_DIR/yesterday_new.gz"
         
         git commit -a -m "updating bot - $(date '+%Y/%m/%d')"
         git pull
