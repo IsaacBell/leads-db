@@ -48,6 +48,7 @@ jobs:
         
     - name: Git commit
       run: |
+        cd ..
         pwd
         git config user.name IsaacBell
         git config user.email isaacbell388@gmail.com
