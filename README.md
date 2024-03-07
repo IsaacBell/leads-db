@@ -1,6 +1,6 @@
 # LeadsDB
 
-LeadsDB is a project that integrates a Next.js frontend with a Flask backend. It includes features such as company data ingestion, company enrichment using the Abstract API, and subscriber management using Notion API.
+LeadsDB is a small app which performs daily ingestions of Newly Registered Domains (NRDs), then attempts to identify new or expanding companies which may serve as potential leads for sales teams. The project integrates a Next.js frontend with a Flask backend. It includes features such as company data ingestion, company enrichment using the Abstract API, and subscriber management using Notion API.
 
 ## Prerequisites
 
