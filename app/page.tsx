@@ -4,7 +4,8 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
 import { useSnackbar } from 'notistack';
-import staticData from '@/utils/staticData'
+import { FormEvent } from 'react';
+import staticData from '@/utils/staticData';
 
 export default function Home() {
   const { enqueueSnackbar } = useSnackbar();
@@ -13,7 +14,7 @@ export default function Home() {
   const [country, setCountry] = useState<string>('United States')
   const [industries, setIndustries] = useState<string[]>([])
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
     try {
