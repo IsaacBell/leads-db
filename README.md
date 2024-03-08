@@ -53,7 +53,7 @@ The frontend is built using Next.js and React. It provides a user interface for 
 
 ### Key files:
 
-- `pages/index.tsx`: The main page component that renders the subscription form.
+- `app/page.tsx`: The main page.
 - `utils/staticData.ts`: Contains static data for countries and industries.
 
 ## Backend
