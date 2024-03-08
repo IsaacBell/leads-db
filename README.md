@@ -1,6 +1,8 @@
 # LeadsDB
 
-LeadsDB is a small app which performs daily ingestions of Newly Registered Domains (NRDs), then attempts to identify new or expanding companies which may serve as potential leads for sales teams. The project integrates a Next.js frontend with a Flask backend. It includes features such as company data ingestion, company enrichment using the Abstract API, and subscriber management using Notion API.
+LeadsDB is a small app which performs daily ingestions of Newly Registered Domains (NRDs). It attempts to identify new or expanding companies out of these NRDs which may serve as potential leads (for sales teams). The plan is to email users a few companies each week which match their preferences.
+
+This project integrates a Next.js frontend with a Flask backend. It includes features such as automatic NRD ingestion, [company data enrichment](https://blog.hubspot.com/sales/data-enrichment) using [Abstract API](https://docs.abstractapi.com/company-enrichment), and subscriber management using the [Notion API](https://github.com/btahir/notion-capture).
 
 ## Prerequisites
 
@@ -21,6 +23,7 @@ cd leads-db
 
 ```
 pnpm install
+python -m spacy download en_core_web_md
 pip install -r requirements.txt
 ```
 
