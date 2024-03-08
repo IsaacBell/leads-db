@@ -54,7 +54,13 @@ export default function Home() {
         <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
           <div className="text-center mb-8">
             <div className="flex justify-center mb-0">
-              <Image src="/LeadsDB-Logo.png" width={300} height={300} alt="LeadsDB Logo" />
+              <Image 
+                priority 
+                src="/LeadsDB-Logo.png" 
+                alt="LeadsDB Logo" 
+                width={300} 
+                height={300} 
+              />
             </div>
             <h1 className="mt-0 text-4xl font-bold mb-4">Discover new contacts</h1>
             <p className="text-lg text-gray-600">
