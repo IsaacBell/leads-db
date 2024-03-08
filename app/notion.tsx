@@ -1,4 +1,6 @@
-export default async function (req, res) {
+import { NextApiRequest, NextApiResponse } from 'next';
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const auth = await fetch('https://api.notion.com/v1/oauth/token', {
       method: 'GET',

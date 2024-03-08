@@ -1,11 +1,16 @@
 import { useState } from 'react'
 import { classNames } from '@/utils/helpers'
+import { FormEvent } from 'react';
 
-function NewsletterSubscribe({ setSubscribed = (_) => {} }) {
+interface NewsletterSubscribeProps {
+  setSubscribed: (subscribed: boolean) => void;
+}
+
+function NewsletterSubscribe({ setSubscribed = (_subscribed: boolean) => {} }: NewsletterSubscribeProps) {
   const [email, setEmail] = useState('')
   const [clicked, setClicked] = useState(false)
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setClicked(true)
     await fetch('api/v1/subscribe', {
