@@ -42,6 +42,13 @@ jobs:
         echo "DAILY_DIR=$GITHUB_WORKSPACE/data/daily" >> $GITHUB_ENV
         echo "SYNC_DIR=$GITHUB_WORKSPACE/nrd-poll/nrd-poll" >> $GITHUB_ENV
         
+    - name: Debug - Check SYNC_DIR path
+      run: |
+        echo "SYNC_DIR path:"
+        echo $SYNC_DIR
+        echo "Contents of SYNC_DIR:"
+        ls -la $SYNC_DIR
+        
     - name: Sync data
       run: |
         mkdir -p "$DAILY_DIR"
