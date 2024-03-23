@@ -3,7 +3,7 @@ name: Daily updater
 on:
   workflow_dispatch:
   schedule:
-    - cron:  '0 */12 * * *'
+    - cron: '0 */12 * * *'
 
 permissions:
   contents: write
@@ -11,41 +11,67 @@ permissions:
 jobs:
   update:
     runs-on: ubuntu-latest
-    
     steps:
+    - name: Checkout current repository
+      uses: actions/checkout@v3
+      
     - name: Checkout nrd-poll repository
       uses: actions/checkout@v3
       with:
         repository: IsaacBell/nrd-poll
         token: ${{ secrets.SYNC_TOKEN }}
         path: nrd-poll
-    
-    - name: What time is it ?
+      
+    - name: What time is it?
       run: |
         date -u
         TZ="Europe/Paris" date
-    
+        
     - name: Set up Python 3
       uses: actions/setup-python@v4
       with:
         python-version: "3.11"
-    
+        
     - name: Install prerequisites
       run: |
         sudo apt -qq install fd-find
-
+        
     - name: Prepare global variables
-      run: | 
+      run: |
         echo "ZONES_DIR=$GITHUB_WORKSPACE/data/zones" >> $GITHUB_ENV
         echo "DAILY_DIR=$GITHUB_WORKSPACE/data/daily" >> $GITHUB_ENV
-        echo "SYNC_DIR=$GITHUB_WORKSPACE/nrd-poll" >> $GITHUB_ENV
-    
+        echo "SYNC_DIR=$GITHUB_WORKSPACE/nrd-poll/nrd-poll" >> $GITHUB_ENV
+        
     - name: Sync data
       run: |
         mkdir -p "$DAILY_DIR"
-        cp "$SYNC_DIR/today_new.gz" "$DAILY_DIR/today_new.gz"
-        cp "$SYNC_DIR/yesterday_new.gz" "$DAILY_DIR/yesterday_new.gz"
         
-    # Commit all changed files back to the repository
-    - uses: stefanzweifel/git-auto-commit-action@v5
-
+        if [ -f "$SYNC_DIR/today_new.gz" ]; then
+          cp "$SYNC_DIR/today_new.gz" "$DAILY_DIR/today_new.gz"
+          echo "today_new.gz synced successfully"
+        else
+          echo "Error: today_new.gz not found in the nrd-poll repository"
+          exit 1
+        fi
+        
+        if [ -f "$SYNC_DIR/yesterday_new.gz" ]; then
+          cp "$SYNC_DIR/yesterday_new.gz" "$DAILY_DIR/yesterday_new.gz"
+          echo "yesterday_new.gz synced successfully"
+        else
+          echo "Error: yesterday_new.gz not found in the nrd-poll repository"
+          exit 1
+        fi
+        
+    - name: Commit changes
+      run: |
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git config --global user.name "github-actions[bot]"
+        
+        git add "$DAILY_DIR/today_new.gz" "$DAILY_DIR/yesterday_new.gz"
+        
+        if git diff --cached --quiet; then
+          echo "No changes to commit"
+        else
+          git commit -m "Sync data from nrd-poll repository"
+          git push
+        fi
