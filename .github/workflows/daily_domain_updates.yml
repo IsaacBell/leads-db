@@ -22,6 +22,13 @@ jobs:
         token: ${{ secrets.SYNC_TOKEN }}
         path: nrd-poll
       
+    - name: Debug - Check nrd-poll checkout
+      run: |
+        echo "Contents of $GITHUB_WORKSPACE:"
+        ls -la $GITHUB_WORKSPACE
+        echo "Contents of $GITHUB_WORKSPACE/nrd-poll:"
+        ls -la $GITHUB_WORKSPACE/nrd-poll
+        
     - name: What time is it?
       run: |
         date -u
@@ -40,7 +47,7 @@ jobs:
       run: |
         echo "ZONES_DIR=$GITHUB_WORKSPACE/data/zones" >> $GITHUB_ENV
         echo "DAILY_DIR=$GITHUB_WORKSPACE/data/daily" >> $GITHUB_ENV
-        echo "SYNC_DIR=$GITHUB_WORKSPACE/nrd-poll/nrd-poll" >> $GITHUB_ENV
+        echo "SYNC_DIR=$GITHUB_WORKSPACE/nrd-poll" >> $GITHUB_ENV
         
     - name: Debug - Check SYNC_DIR path
       run: |
