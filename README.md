@@ -41,6 +41,7 @@ pip install -r requirements.txt
   - `ABSTRACT_API_SCRAPE_API_KEY`: Abstract API scrape API key
   - `NOTION_TOKEN`: Notion API token
   - `NOTION_DB_ID`: Notion database ID
+  - `OPENAI_API_KEY`: OpenAI API Key
 
 ### Start the development servers:
 
