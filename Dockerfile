@@ -1,4 +1,4 @@
-FROM python:3.9.19-bullseye
+FROM python:3.12.1
 #RUN apt update -y && apt install nodejs npm -y 
 RUN curl -sL https://deb.nodesource.com/setup_21.x -o nodesource_setup.sh
 RUN ["sh",  "./nodesource_setup.sh"]
