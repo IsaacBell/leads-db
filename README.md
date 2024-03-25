@@ -45,6 +45,9 @@ pip install -r requirements.txt
   - `NOTION_TOKEN`: Notion API token
   - `NOTION_DB_ID`: Notion database ID
   - `OPENAI_API_KEY`: OpenAI API Key
+  - `KAFKA_URL`: Kafka broker address
+  - `KAFKA_USERNAME`: Kafka username
+  - `KAFKA_PASSWORD`: Kafka password
 
 ### Start the development servers:
 
