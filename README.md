@@ -91,6 +91,10 @@ The backend is built with Flask and provides various API endpoints for company d
 
 The repository includes a GitHub Actions workflow for daily data updates. The workflow is defined in `.github/workflows/daily-updater.yml` and runs on a scheduled basis or can be triggered manually.
 
+## Todos
+
+- Change the base url in the postman collection
+
 ## License
 
 This project is licensed under the MIT License.
