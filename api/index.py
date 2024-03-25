@@ -1,6 +1,8 @@
 import os
+import ast
 import gzip
 import time
+import json
 import atexit
 import logging
 import requests
@@ -8,13 +10,21 @@ import subprocess
 import urllib.parse
 from os.path import join
 from db import AstraDBClient
+from site_summarizer import SiteSummarizer
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask, request, jsonify
+from kafka_message_producer import KafkaMessageProducer
 
+########### General Config ########### 
 logging.basicConfig()
 logging.getLogger('apscheduler').setLevel(logging.DEBUG)
 
-def company_enrichment(domain):
+openai_api_key = os.getenv("OPENAI_API_KEY")
+summarizer = SiteSummarizer(openai_api_key)
+
+########### Scheduled Tasks ########### 
+
+def get_company_enrichment(domain):
     """
     Retrieves company data from the Abstract API using the provided domain.
 
@@ -32,6 +42,15 @@ def company_enrichment(domain):
     try:
         response = requests.get(f"{url}/?api_key={api_key}&domain={domain}")
         response.raise_for_status()
+        
+        response_data = json.loads(response.content)
+        app.logger.info(f'kafka: sync started for {response_data["domain"]}')
+        decoded_json = ast.literal_eval(response.content.decode("utf-8"))
+        app.logger.info(f'kafka: decoded json: {decoded_json}')
+
+        producer = KafkaMessageProducer()
+        producer.produce_message('company-data', decoded_json, app.logger)
+        
         return response.content
     except requests.RequestException as e:
         return jsonify({"error": str(e)}), 500
@@ -68,25 +87,27 @@ def ingest_daily_company_data():
     """
     db = AstraDBClient()
     for domain in ingestions():
-        company = company_enrichment(domain)
-        # if scraped_html
+        company = get_company_enrichment(domain)
         db.insert_company(company) 
+
+########### Scheduler ########### 
 
 scheduler = BackgroundScheduler()
 scheduler.add_job(func=ingest_daily_company_data, trigger="interval", hours=12)
 scheduler.start()
 
+########### App Config ########### 
+
 app = Flask(__name__)
 
-@app.route("/api/heartbeat")
-def hello_world():
+########### Endpoints ########### 
+
+@app.route("/api/v1/heartbeat", methods=['GET'])
+def heartbeat():    
     return "<p>OK</p>"
 
 @app.route("/api/v1/company-enrichment", methods=['GET'])
 def company_enrichment():
-    default_scrape_url = "https://companyenrichment.abstractapi.com/v1"
-    url = os.getenv('ABSTRACT_API_COMPANY_ENRICHMENT_API_URL', default_scrape_url)
-    api_key = os.getenv('ABSTRACT_API_COMPANY_ENRICHMENT_API_KEY', "")
     domain = ""
 
     if request.is_json:
@@ -94,14 +115,8 @@ def company_enrichment():
         domain = data.get('domain')
     else:
         domain = request.form.get('domain')
-    app.logger.info(f"{url}/?api_key={api_key}&domain={domain}")
 
-    try:
-        response = requests.get(f"{url}/?api_key={api_key}&domain={domain}")
-        response.raise_for_status()
-        return response.content
-    except requests.RequestException as e:
-        return jsonify({"error": str(e)}), 500
+    return get_company_enrichment(domain)
 
 @app.route("/api/v1/scrape", methods=['GET', 'POST'])
 def scrape():
@@ -128,6 +143,21 @@ def scrape():
         response.raise_for_status()
         return response.content
     except requests.RequestException as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/v1/crawl', methods=['POST'])
+def crawl():
+    try:
+        data = request.get_json()
+        url = data.get('url')
+
+        if url:
+            summary = summarizer.scrape_and_summarize(url)
+            return jsonify(summary)
+        else:
+            return jsonify({"error": "URL not provided"}), 400
+    except Exception as e:
+        app.logger.exception("An error occurred during summarization")
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/v1/_system/daily_merge', methods=['GET', 'POST'])
@@ -245,6 +275,8 @@ def add_notion_subscriber():
         return jsonify(page_response.json()), 200
     except requests.RequestException as e:
         return jsonify({'error': str(e)}), 500
+
+########### Teardown ########### 
 
 # Shut down the scheduler when exiting the app
 atexit.register(lambda: scheduler.shutdown())
