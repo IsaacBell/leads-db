@@ -25,7 +25,7 @@ jobs:
     - name: Build & Publish
       run: |
         gcloud config set project ${{ secrets.GCP_PROJECT }}
-        gcloud builds submit --tag gcr.io/${{ secrets.GCP_PROJECT }} leads-db --timeout=9000 --machine-type=e2-medium
+        gcloud builds submit --tag gcr.io/${{ secrets.GCP_PROJECT }}/leads-db --timeout=9000 --machine-type=e2-medium
       
     - name: Deploy
       run: |
