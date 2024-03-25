@@ -90,30 +90,3 @@ jobs:
           git push
         fi
   
-  setup-build-publish-deploy:
-    name: Setup, Build, Publish, and Deploy
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout
-      uses: actions/checkout@main
-
-    - uses: google-github-actions/setup-gcloud@v0
-      with:
-        service_account_email: ${{ secrets.GCP_EMAIL }}
-        service_account_key: ${{ secrets.GCP_CREDENTIALS }}
-        export_default_credentials: true
-    
-    - name: Configure Docker
-      run: |
-        gcloud auth configure-docker
-      
-    - name: Build & Publish
-      run: |
-        gcloud config set project ${{ secrets.GCP_PROJECT }}
-        gcloud builds submit --tag gcr.io/${{ secrets.GCP_PROJECT }} leads-db --timeout=9000 --machine-type=e2-medium
-      
-    - name: Deploy
-      run: |
-        gcloud run deploy leads-db --image gcr.io/${{ secrets.GCP_PROJECT }}/leads-db \
-        --region=us-central1 --platform managed --allow-unauthenticated --set-secrets=ABSTRACT_API_COMPANY_ENRICHMENT_API_KEY=ABSTRACT_API_COMPANY_ENRICHMENT_API_KEY:latest,ABSTRACT_API_COMPANY_ENRICHMENT_API_URL=ABSTRACT_API_COMPANY_ENRICHMENT_API_URL:latest,ABSTRACT_API_SCRAPE_API_KEY=ABSTRACT_API_SCRAPE_API_KEY:latest,ABSTRACT_API_SCRAPE_URL=ABSTRACT_API_SCRAPE_URL:latest,PINECONE_API_KEY=PINECONE_API_KEY:latest,PULSAR_STREAMING_API_TOKEN=PULSAR_STREAMING_API_TOKEN:latest,ASTRA_DB_APPLICATION_TOKEN=ASTRA_DB_APPLICATION_TOKEN:latest,ASTRA_DB_STREAMING_URL=ASTRA_DB_STREAMING_URL:latest,ASTRA_DB_API_ENDPOINT=ASTRA_DB_API_ENDPOINT:latest,ASTRA_DB_ID=ASTRA_DB_ID:latest,ASTRA_DB_REGION=ASTRA_DB_REGION:latest,NOTION_TOKEN=NOTION_TOKEN:latest,NOTION_DB_ID=NOTION_DB_ID:latest,OPENAI_API_KEY=OPENAI_API_KEY:latest --min-instances=0 --max-instances=2
-        gcloud run services update-traffic leads-db --region=us-central1 --to-revisions LATEST=100
