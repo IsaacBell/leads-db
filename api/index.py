@@ -162,27 +162,7 @@ def crawl():
 
 @app.route('/api/v1/_system/daily_merge', methods=['GET', 'POST'])
 def daily_system_merge():
-    command = [
-        'python', 
-        '(internal)/daily_merge.py', 
-        '--fresh-dir', 
-        "/tmp/zones", 
-        '--referential-dir', 
-        "data/zones"
-    ]
-    
-    try:
-        # Run the script and capture the output
-        result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        
-        # Return the output and error (if any)
-        return jsonify({
-            'stdout': result.stdout,
-            'stderr': result.stderr,
-            'returncode': result.returncode
-        })
-    except Exception as e:
-        return jsonify({'error': str(e)})
+    ingest_daily_company_data()
 
 # daily new registered domains (NRDs)
 # returns an array of strings
