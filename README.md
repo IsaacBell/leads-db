@@ -3,9 +3,17 @@
 ![image](https://github.com/IsaacBell/leads-db/assets/2613157/b17b9c41-d8af-4cd3-acfe-0f54b53e7332)
 ---
 ## Introduction
-LeadsDB is a small app which performs daily ingestions of Newly Registered Domains (NRDs). It attempts to identify new or expanding companies out of these NRDs which may serve as potential leads (for sales teams). The plan is to email users a few companies each week which match their preferences.
+LeadsDB is a lead generation system. On the back end, the system performs daily ingestions of company data as well as Newly Registered Domains (NRDs). It attempts to identify companies which may serve as candidate leads, then presents the best results to the user (see below). 
 
-This project integrates a Next.js frontend with a Flask backend. It includes features such as automatic NRD ingestion, [company data enrichment](https://blog.hubspot.com/sales/data-enrichment) using [Abstract API](https://docs.abstractapi.com/company-enrichment), and subscriber management using the [Notion API](https://github.com/btahir/notion-capture).
+1. ✓ Lead data can be retrieved through a REST API. 
+2. 🚧 Users receive email blasts of a few companies each week which match their preferences. (Under construction: Approx. 75% completed)
+3. 🔴 Users can integrate LeadsDB into their Hubspot or Salesforce projects, and leads will populate directly in their existing system. (Not started)
+
+This repository is home to the user-facing front end, as well as the user-facing REST API. All code related to data ingestion exists in a separate, [private micro-client](https://github.com/IsaacBell/nrd-poll). 
+
+This repository integrates a Next.js frontend with a Flask backend. For data storage, an [external Cassandra database](https://astra.datastax.com/) is used which then forwards data to external data warehouses through CDC trigger procedures. It includes features such as automatic NRD ingestion, [company data enrichment](https://blog.hubspot.com/sales/data-enrichment) using [Abstract API](https://docs.abstractapi.com/company-enrichment), and subscriber management using the [Notion API](https://github.com/btahir/notion-capture).
+
+The app is automatically deployed to [GCP](https://cloud.google.com/) Cloud Run, where it lives as a stateless app. Importantly, that means that contributors should not add code which saves state locally. We are loosely following a trunk-based branching strategy which will be formalized once Phase 2 is complete.
 
 ## Prerequisites
 
