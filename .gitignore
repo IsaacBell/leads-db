@@ -38,3 +38,5 @@ __pycache__
 
 tmp/*
 temp/*
+
+gcp_service_account.json
