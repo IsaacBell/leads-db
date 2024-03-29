@@ -83,7 +83,7 @@ def get_company_enrichment(domain):
         response_data = response.json()
         app.logger.info(f'kafka: sync started for {response_data["domain"]}')
 
-        # small hack to make kafka. CHANGE AT YOUR OWN PERIL
+        # small hack to make kafka work. CHANGE AT YOUR OWN PERIL
         app.logger.info(f'kafka: sync started for {response_data["domain"]}')
         decoded_json = ast.literal_eval(response.content.decode("utf-8"))
         app.logger.info(f'kafka: decoded json: {decoded_json}')        
@@ -206,16 +206,19 @@ def ingestions():
                     domains.append(line.strip())
     return domains
 
+# todo - migrate to firestore
 @app.route('/api/v1/companies/<id>', methods=['GET'])
 def get_company(id):
     db = AstraDBClient()
     return db.find(id)
 
+# todo - migrate to firestore
 @app.route('/api/v1/companies_by_name/<name>', methods=['GET'])
 def get_company_by_name(name):
     db = AstraDBClient()
     return db.find_by_name(name)
 
+# todo - migrate to firestore
 @app.route('/api/v1/companies', methods=['POST'])
 def insert_company():
     db = AstraDBClient()
