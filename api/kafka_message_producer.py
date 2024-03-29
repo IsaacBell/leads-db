@@ -12,8 +12,8 @@ class KafkaMessageProducer:
             security_protocol='SASL_SSL',
             sasl_plain_username=os.getenv('KAFKA_USERNAME', ''),
             sasl_plain_password=os.getenv('KAFKA_PASSWORD', ''),
-            api_version_auto_timeout_ms=3000,  
-            request_timeout_ms=3000  
+            api_version_auto_timeout_ms=1000,  
+            request_timeout_ms=1000  
         )
         
 
@@ -26,10 +26,9 @@ class KafkaMessageProducer:
     # We don't need to ensure delivery at this stage
     def produce_message(self, topic, message):
         try:
-            result = self.producer.send(topic, message)
-            app.logger.info(f'message delivered to {topic}')
+            result = self.producer.send(topic, json.dumps(message).encode('utf-8'))
+            current_app.logger.info(f'message delivered to {topic}')
             current_app.logger.info("Message produced: %s", result)
             return result
         except Exception as e:
             current_app.logger.error(f"Error producing message to {topic}: {e}")
-

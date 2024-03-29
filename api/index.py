@@ -35,7 +35,7 @@ with open('gcp_service_account.json', 'w') as f:
         raise_firebase_credentials_committed_exception()
     json.dump(service_account_key, f)
 cred = credentials.Certificate('gcp_service_account.json')
-app  = firebase_admin.initialize_app(cred)
+firebase_app = firebase_admin.initialize_app(cred)
 
 ########### Scheduled Tasks ########### 
 
@@ -79,12 +79,17 @@ def get_company_enrichment(domain):
     try:
         response = requests.get(f"{url}/?api_key={api_key}&domain={domain}")
         response.raise_for_status()
-        
+
         response_data = response.json()
         app.logger.info(f'kafka: sync started for {response_data["domain"]}')
 
+        # small hack to make kafka. CHANGE AT YOUR OWN PERIL
+        app.logger.info(f'kafka: sync started for {response_data["domain"]}')
+        decoded_json = ast.literal_eval(response.content.decode("utf-8"))
+        app.logger.info(f'kafka: decoded json: {decoded_json}')        
+
         producer = KafkaMessageProducer()
-        producer.produce_message('company-data', response_data)
+        producer.produce_message('company-data', decoded_json)
         
         return response_data
     except requests.RequestException as e:
