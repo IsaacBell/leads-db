@@ -9,51 +9,35 @@ import requests
 import subprocess
 import urllib.parse
 from os.path import join
-from db import AstraDBClient
-from site_summarizer import SiteSummarizer
+
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask, request, jsonify
 from kafka_message_producer import KafkaMessageProducer
+from google.oauth2 import service_account
+import firebase_admin
+from firebase_admin import credentials, firestore
+
+from models.company import Company
+from exceptions import FirebaseException
+from site_summarizer import SiteSummarizer
 
 ########### General Config ########### 
 logging.basicConfig()
 logging.getLogger('apscheduler').setLevel(logging.DEBUG)
 
-openai_api_key = os.getenv("OPENAI_API_KEY")
+openai_api_key = os.getenv('OPENAI_API_KEY')
 summarizer = SiteSummarizer(openai_api_key)
 
+# Init Firebase
+service_account_key = json.loads(os.getenv('FIREBASE_SERVICE_ACCOUNT_KEY'))
+with open('gcp_service_account.json', 'w') as f:
+    if 'isThisFileInPlaceholderState' in service_account_key and service_account_key['isThisFileInPlaceholderState']:
+        raise_firebase_credentials_committed_exception()
+    json.dump(service_account_key, f)
+cred = credentials.Certificate('gcp_service_account.json')
+app  = firebase_admin.initialize_app(cred)
+
 ########### Scheduled Tasks ########### 
-
-def get_company_enrichment(domain):
-    """
-    Retrieves company data from the Abstract API using the provided domain.
-
-    Args:
-        domain (str): The domain name for which to retrieve company data.
-
-    Returns:
-        bytes: The response content from the API if the request is successful.
-        tuple: A JSON error message and a status code of 500 if an exception occurs.
-    """
-    default_scrape_url = "https://companyenrichment.abstractapi.com/v1"
-    url = os.getenv('ABSTRACT_API_COMPANY_ENRICHMENT_API_URL', default_scrape_url)
-    api_key = os.getenv('ABSTRACT_API_COMPANY_ENRICHMENT_API_KEY', "")
-
-    try:
-        response = requests.get(f"{url}/?api_key={api_key}&domain={domain}")
-        response.raise_for_status()
-        
-        response_data = json.loads(response.content)
-        app.logger.info(f'kafka: sync started for {response_data["domain"]}')
-        decoded_json = ast.literal_eval(response.content.decode("utf-8"))
-        app.logger.info(f'kafka: decoded json: {decoded_json}')
-
-        producer = KafkaMessageProducer()
-        producer.produce_message('company-data', decoded_json, app.logger)
-        
-        return response.content
-    except requests.RequestException as e:
-        return jsonify({"error": str(e)}), 500
 
 def ingestions():
     """
@@ -77,18 +61,47 @@ def ingestions():
                     domains.append(line.strip())
     return domains
 
+def get_company_enrichment(domain):
+    """
+    Retrieves company data from the Abstract API using the provided domain.
+
+    Args:
+        domain (str): The domain name for which to retrieve company data.
+
+    Returns:
+        bytes: The response content from the API if the request is successful.
+        tuple: A JSON error message and a status code of 500 if an exception occurs.
+    """
+    default_scrape_url = "https://companyenrichment.abstractapi.com/v1"
+    url = os.getenv('ABSTRACT_API_COMPANY_ENRICHMENT_API_URL', default_scrape_url)
+    api_key = os.getenv('ABSTRACT_API_COMPANY_ENRICHMENT_API_KEY', "")
+
+    try:
+        response = requests.get(f"{url}/?api_key={api_key}&domain={domain}")
+        response.raise_for_status()
+        
+        response_data = response.json()
+        app.logger.info(f'kafka: sync started for {response_data["domain"]}')
+
+        producer = KafkaMessageProducer()
+        producer.produce_message('company-data', response_data)
+        
+        return response_data
+    except requests.RequestException as e:
+        return jsonify({"error": str(e)}), 500
+
 def ingest_daily_company_data():
     """
     Orchestrates the daily ingestion of company data.
 
     Retrieves domain names from gzip files using the `ingestions` function,
     fetches company data for each domain using the `company_enrichment` function,
-    and inserts the data into the database using an instance of `AstraDBClient`.
+    and inserts the data into the DB`.
     """
-    db = AstraDBClient()
     for domain in ingestions():
-        company = get_company_enrichment(domain)
-        db.insert_company(company) 
+        company_data = get_company_enrichment(domain) 
+        company = Company(data=company_data)
+        company.save()
 
 ########### Scheduler ########### 
 
@@ -116,7 +129,12 @@ def company_enrichment():
     else:
         domain = request.form.get('domain')
 
-    return get_company_enrichment(domain)
+    # return get_company_enrichment(domain)
+    app.logger.info('here')
+    company_data = get_company_enrichment(domain) 
+    company = Company(data=company_data)
+    company.save()
+    return company_data
 
 @app.route("/api/v1/scrape", methods=['GET', 'POST'])
 def scrape():

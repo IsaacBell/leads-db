@@ -1,6 +1,8 @@
 import os
 import json
+from flask import current_app
 from kafka import KafkaProducer
+
 
 class KafkaMessageProducer:
     def __init__(self):
@@ -21,12 +23,13 @@ class KafkaMessageProducer:
     def __exit__(self, exc_type, exc_value, traceback):
         self.producer.close()
 
-    def produce_message(self, topic, message, logger = None):
+    # We don't need to ensure delivery at this stage
+    def produce_message(self, topic, message):
         try:
-            result = self.producer.send(topic, json.dumps(message).encode('utf-8'))
-            if logger:
-                logger.info("Message produced: %s", result)
+            result = self.producer.send(topic, message)
+            app.logger.info(f'message delivered to {topic}')
+            current_app.logger.info("Message produced: %s", result)
             return result
         except Exception as e:
-            print(f"Error producing message: {e}")
+            current_app.logger.error(f"Error producing message to {topic}: {e}")
 
