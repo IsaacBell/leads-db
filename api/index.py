@@ -241,10 +241,10 @@ def add_notion_subscriber():
         'Authorization': f'Bearer {notion_token}',
         'Notion-Version': notion_version,
     }
-    print('token')
-    print(notion_token)
-    print('\ndbid')
-    print(notion_db_id)
+    app.logger.info('token')
+    app.logger.info(notion_token)
+    app.logger.info('\ndbid')
+    app.logger.info(notion_db_id)
 
     # Since Flask does not support await, we will not use async here and will use requests synchronously
     try:
@@ -253,9 +253,9 @@ def add_notion_subscriber():
         auth_response.raise_for_status()  # This will raise an exception for HTTP errors
         token_data = auth_response.json()
         access_token = token_data.get('access_token')
-        print('**********************')
-        print(auth_response)
-        print('**********************')
+        app.logger.info('**********************')
+        app.logger.info(auth_response)
+        app.logger.info('**********************')
 
         # Update Authorization header with the new access token
         headers['Authorization'] = f'Bearer {access_token}'
@@ -280,6 +280,7 @@ def add_notion_subscriber():
 
         return jsonify(page_response.json()), 200
     except requests.RequestException as e:
+        app.logger.error(f'Error subscribing Notion user: {e}')
         return jsonify({'error': str(e)}), 500
 
 ########### Teardown ########### 

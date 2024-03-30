@@ -70,7 +70,7 @@ class AstraDBClient:
   def insert(self, collection, data):
     tmp_datastring = json.dumps(data)
     vector_embedding = nlp(tmp_datastring)
-    # print(vector_embedding.vector)
+    current_app.logger.info('Vector embedding created for company record')
     data['$vector'] =  [float(component) for component in vector_embedding.vector]
 
     datastring = json.dumps(data)
