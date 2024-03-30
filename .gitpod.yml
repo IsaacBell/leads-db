@@ -8,5 +8,3 @@ tasks:
   - before: python -m spacy download en_core_web_md
     init: pnpm install && pip install -r requirements.txt
     command: pnpm run dev
-
-

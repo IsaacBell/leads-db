@@ -101,7 +101,7 @@ The repository includes a GitHub Actions workflow for daily data updates. The wo
 
 ## Todos
 
-- Change the base url in the postman collection
+- Use GCloud Build secret keys for the service account credential file
 
 ## License
 
