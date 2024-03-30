@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from multipledispatch import dispatch
 from collections import namedtuple
 from types import *
+from flask import current_app
 
 from astrapy.db import AstraDB, AstraDBCollection
 from astrapy.ops import AstraDBOps

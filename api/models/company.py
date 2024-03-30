@@ -41,6 +41,17 @@ class Company:
         return None
 
     @staticmethod
+    def get_by_name(name: str):
+        firestore_client = firestore.client()
+        query = firestore_client.collection('companies').where('data.name', '==', name)
+        docs = query.get()
+        if docs:
+            doc = docs[0]
+            data = doc.to_dict()
+            return Company(data['data'], doc.id)
+        return None
+
+    @staticmethod
     def get_all():
         firestore_client = firestore.client()
         docs = firestore_client.collection('companies').get()

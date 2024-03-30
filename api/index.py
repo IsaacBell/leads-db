@@ -8,10 +8,11 @@ import logging
 import requests
 import subprocess
 import urllib.parse
+import threading
 from os.path import join
 
 from apscheduler.schedulers.background import BackgroundScheduler
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 from kafka_message_producer import KafkaMessageProducer
 from google.oauth2 import service_account
 import firebase_admin
@@ -20,6 +21,10 @@ from firebase_admin import credentials, firestore
 from models.company import Company
 from exceptions import FirebaseException
 from site_summarizer import SiteSummarizer
+
+########### App Config ########### 
+
+app = Flask(__name__)
 
 ########### General Config ########### 
 logging.basicConfig()
@@ -61,7 +66,7 @@ def ingestions():
                     domains.append(line.strip())
     return domains
 
-def get_company_enrichment(domain):
+def get_company_enrichment(domain, kafka_logs_enabled: bool = True):
     """
     Retrieves company data from the Abstract API using the provided domain.
 
@@ -81,15 +86,17 @@ def get_company_enrichment(domain):
         response.raise_for_status()
 
         response_data = response.json()
-        app.logger.info(f'kafka: sync started for {response_data["domain"]}')
 
-        # small hack to make kafka work. CHANGE AT YOUR OWN PERIL
-        app.logger.info(f'kafka: sync started for {response_data["domain"]}')
-        decoded_json = ast.literal_eval(response.content.decode("utf-8"))
-        app.logger.info(f'kafka: decoded json: {decoded_json}')        
+        app.logger.info(f'company data: {response.content}')
+        if kafka_logs_enabled and response_data['name']:
+            app.logger.info(f'kafka: sync started for {response_data["domain"]}')
+            # small hack to make kafka work. CHANGE AT YOUR OWN PERIL
+            app.logger.info(f'kafka: sync started for {response_data["domain"]}')
+            decoded_json = ast.literal_eval(response.content.decode("utf-8"))
+            app.logger.info(f'kafka: decoded json: {decoded_json}')        
 
-        producer = KafkaMessageProducer()
-        producer.produce_message('company-data', decoded_json)
+            producer = KafkaMessageProducer()
+            producer.produce_message('company-data', decoded_json)
         
         return response_data
     except requests.RequestException as e:
@@ -103,20 +110,26 @@ def ingest_daily_company_data():
     fetches company data for each domain using the `company_enrichment` function,
     and inserts the data into the DB`.
     """
-    for domain in ingestions():
-        company_data = get_company_enrichment(domain) 
-        company = Company(data=company_data)
-        company.save()
+    with app.app_context():
+        companies = []
+        for domain in ingestions():
+            try:
+                company_data = get_company_enrichment(domain, kafka_logs_enabled=False)
+                if company_data:
+                    company = Company(data=company_data)
+                    company.save()
+                    companies.append(company.data)
+            except Exception as e:
+                # Log the error and continue with the next domain
+                app.logger.exception(f"Error processing {domain}: {e}")
+                continue
+        return companies
 
 ########### Scheduler ########### 
 
 scheduler = BackgroundScheduler()
 scheduler.add_job(func=ingest_daily_company_data, trigger="interval", hours=12)
 scheduler.start()
-
-########### App Config ########### 
-
-app = Flask(__name__)
 
 ########### Endpoints ########### 
 
@@ -134,8 +147,6 @@ def company_enrichment():
     else:
         domain = request.form.get('domain')
 
-    # return get_company_enrichment(domain)
-    app.logger.info('here')
     company_data = get_company_enrichment(domain) 
     company = Company(data=company_data)
     company.save()
@@ -183,52 +194,44 @@ def crawl():
         app.logger.exception("An error occurred during summarization")
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/v1/_system/daily_merge', methods=['GET', 'POST'])
-def daily_system_merge():
-    ingest_daily_company_data()
+@app.route('/api/v1/_system/sync', methods=['GET', 'POST'])
+def system_sync():
+    threading.Thread(target=ingest_daily_company_data).start()
+    return Response('Enqueued', status=200)
 
-# daily new registered domains (NRDs)
-# returns an array of strings
-@app.route('/api/v1/_system/ingestions', methods=['GET'])
-def ingestions():
-    daily_folder_path = join('data', 'daily')
-    app.logger.info(daily_folder_path)
-
-    domains = []
-    for file in os.listdir(daily_folder_path):
-        app.logger.info(file)
-        if file.endswith('.gz'):
-            gzip_file_path = os.path.join(daily_folder_path, file)
-
-            with gzip.open(gzip_file_path, 'rt') as f:  # Open in text mode ('rt') for easier processing
-                for line in f:
-                    app.logger.info(line.strip())
-                    domains.append(line.strip())
-    return domains
-
-# todo - migrate to firestore
 @app.route('/api/v1/companies/<id>', methods=['GET'])
 def get_company(id):
-    db = AstraDBClient()
-    return db.find(id)
+    return Company.get_by_id(id)
 
-# todo - migrate to firestore
 @app.route('/api/v1/companies_by_name/<name>', methods=['GET'])
 def get_company_by_name(name):
-    db = AstraDBClient()
-    return db.find_by_name(name)
+    return Company.get_by_name(name)
 
-# todo - migrate to firestore
 @app.route('/api/v1/companies', methods=['POST'])
 def insert_company():
-    db = AstraDBClient()
-    if request.is_json:
-        data = request.json
-        company = data.get('company')
-    else:
-        company = request.form.get('company')
-
-    return db.insert_company(company)
+    try:
+        data = request.json['data']
+        company = Company(data)
+        company.save()
+        return jsonify({
+            'status': 'success',
+            'message': 'Company created successfully',
+            'data': {
+                'id': company.id,
+                'data': company.data
+            }
+        }), 201
+    except KeyError:
+        return jsonify({
+            'status': 'error',
+            'message': 'Missing required field: data'
+        }), 400
+    except Exception as e:
+        current_app.logger.error(f'Error inserting company: {str(e)}')
+        return jsonify({
+            'status': 'error',
+            'message': 'An error occurred while inserting the company'
+        }), 500
 
 @app.route('/api/v1/subscribe', methods=['POST'])
 def add_notion_subscriber():
