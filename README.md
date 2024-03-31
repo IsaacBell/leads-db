@@ -6,7 +6,7 @@
 LeadsDB is a lead generation system. On the back end, the system performs daily ingestions of company data as well as Newly Registered Domains (NRDs). It attempts to identify companies which may serve as candidate leads, then presents the best results to the user (see below). 
 
 1. ✓ Lead data can be retrieved through a REST API. 
-2. 🚧 Users receive email blasts of a few companies each week which match their preferences. (Under construction: Approx. 75% completed)
+2. 🚧 Users receive email blasts of a few companies each week which match their preferences. (Under construction: Approx. 85% completed)
 3. 🔴 Users can integrate LeadsDB into their Hubspot or Salesforce projects, and leads will populate directly in their existing system. (Not started)
 
 This repository is home to the user-facing front end, as well as the user-facing REST API. All code related to data ingestion exists in a separate, [private micro-client](https://github.com/IsaacBell/nrd-poll). 
@@ -56,6 +56,7 @@ pip install -r requirements.txt
   - `KAFKA_URL`: Kafka broker address
   - `KAFKA_USERNAME`: Kafka username
   - `KAFKA_PASSWORD`: Kafka password
+  - `MOESIF_APP_ID`: Moesif API monetization platform
 
 ### Start the development servers:
 
@@ -102,6 +103,9 @@ The repository includes a GitHub Actions workflow for daily data updates. The wo
 ## Todos
 
 - Use GCloud Build secret keys for the service account credential file
+- Finish building API governance system using Moesif
+- Set MOESIF_APP_ID in GCP
+- Migrate Cloud Build Python version to 3.12.1
 
 ## License
 
