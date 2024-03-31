@@ -83,7 +83,7 @@ The backend is built with Flask and provides various API endpoints for company d
 ### Key files:
 
 - `api/index.py`: The main Flask application file that defines the API routes and schedules background tasks.
-- `api/db.py`: Defines the AstraDBClient class for interacting with Astra DB.
+- `api/models`: All model classes.
 
 ## API Endpoints
 
