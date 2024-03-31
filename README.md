@@ -1,6 +1,7 @@
 # LeadsDB
 
-![image](https://github.com/IsaacBell/leads-db/assets/2613157/b17b9c41-d8af-4cd3-acfe-0f54b53e7332)
+![image](https://github.com/IsaacBell/leads-db/assets/2613157/d020f155-16b1-4d2d-a6ca-a1eee0ad5790)
+
 ---
 ## Introduction
 LeadsDB is a lead generation system. On the back end, the system performs daily ingestions of company data as well as Newly Registered Domains (NRDs). It attempts to identify companies which may serve as candidate leads, then presents the best results to the user (see below). 
