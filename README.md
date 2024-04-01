@@ -1,6 +1,9 @@
 # LeadsDB
 
-![image](https://github.com/IsaacBell/leads-db/assets/2613157/d020f155-16b1-4d2d-a6ca-a1eee0ad5790)
+(note - this app is still a WIP - v1 completion planned in April 2024, formal launch planned in May)
+
+![image](https://github.com/IsaacBell/leads-db/assets/2613157/5b5b3cf3-010f-40e1-a6a5-e1b03bdb6923)
+
 
 ---
 ## Introduction
