@@ -1,12 +1,16 @@
 # LeadsDB
 
-![image](https://github.com/IsaacBell/leads-db/assets/2613157/b17b9c41-d8af-4cd3-acfe-0f54b53e7332)
+(note - this app is still a WIP - v1 completion planned in April 2024, formal launch planned in May)
+
+![image](https://github.com/IsaacBell/leads-db/assets/2613157/5b5b3cf3-010f-40e1-a6a5-e1b03bdb6923)
+
+
 ---
 ## Introduction
 LeadsDB is a lead generation system. On the back end, the system performs daily ingestions of company data as well as Newly Registered Domains (NRDs). It attempts to identify companies which may serve as candidate leads, then presents the best results to the user (see below). 
 
 1. ✓ Lead data can be retrieved through a REST API. 
-2. 🚧 Users receive email blasts of a few companies each week which match their preferences. (Under construction: Approx. 75% completed)
+2. 🚧 Users receive email blasts of a few companies each week which match their preferences. (Under construction: Approx. 85% completed)
 3. 🔴 Users can integrate LeadsDB into their Hubspot or Salesforce projects, and leads will populate directly in their existing system. (Not started)
 
 This repository is home to the user-facing front end, as well as the user-facing REST API. All code related to data ingestion exists in a separate, [private micro-client](https://github.com/IsaacBell/nrd-poll). 
@@ -56,6 +60,7 @@ pip install -r requirements.txt
   - `KAFKA_URL`: Kafka broker address
   - `KAFKA_USERNAME`: Kafka username
   - `KAFKA_PASSWORD`: Kafka password
+  - `MOESIF_APP_ID`: Moesif API monetization platform
 
 ### Start the development servers:
 
@@ -81,7 +86,7 @@ The backend is built with Flask and provides various API endpoints for company d
 ### Key files:
 
 - `api/index.py`: The main Flask application file that defines the API routes and schedules background tasks.
-- `api/db.py`: Defines the AstraDBClient class for interacting with Astra DB.
+- `api/models`: All model classes.
 
 ## API Endpoints
 
@@ -102,6 +107,9 @@ The repository includes a GitHub Actions workflow for daily data updates. The wo
 ## Todos
 
 - Use GCloud Build secret keys for the service account credential file
+- Finish building API governance system using Moesif
+- Set MOESIF_APP_ID in GCP
+- Migrate Cloud Build Python version to 3.12.1
 
 ## License
 

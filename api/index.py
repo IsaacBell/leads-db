@@ -17,14 +17,28 @@ from kafka_message_producer import KafkaMessageProducer
 from google.oauth2 import service_account
 import firebase_admin
 from firebase_admin import credentials, firestore
+from moesifwsgi import MoesifMiddleware, MoesifAPIClient
 
+from models.user import User
 from models.company import Company
-from exceptions import FirebaseException
+from exceptions import raise_auth_exception, raise_firebase_credentials_committed_exception
 from site_summarizer import SiteSummarizer
 
 ########### App Config ########### 
 
 app = Flask(__name__)
+moesif_app_id = os.getenv('MOESIF_APP_ID')
+moesif_client = MoesifAPIClient(moesif_app_id).api
+
+moesif_settings = {
+    'DEBUG': True,
+    'APPLICATION_ID': moesif_app_id,
+    'CAPTURE_OUTGOING_REQUESTS': False, # Set to True to also capture outgoing calls to 3rd parties.
+    'LOG_BODY': True,
+}
+
+app.wsgi_app = MoesifMiddleware(app.wsgi_app, moesif_settings)
+
 
 ########### General Config ########### 
 logging.basicConfig()
@@ -43,6 +57,18 @@ cred = credentials.Certificate('gcp_service_account.json')
 firebase_app = firebase_admin.initialize_app(cred)
 
 ########### Scheduled Tasks ########### 
+
+def identify_user_session():
+    api_token = request.headers.get('X-API-TOKEN')
+    user_email = request.headers.get('X-USER-EMAIL')
+    if not api_token:
+        return None
+    update = moesif_client.update_user({
+        'user_id': api_token,
+        'metadata': user_email,
+    })
+    app.logger.info(f'Identified user session: {update}')
+    return update
 
 def ingestions():
     """
@@ -150,6 +176,7 @@ def company_enrichment():
     company_data = get_company_enrichment(domain) 
     company = Company(data=company_data)
     company.save()
+
     return company_data
 
 @app.route("/api/v1/scrape", methods=['GET', 'POST'])
@@ -201,10 +228,20 @@ def system_sync():
 
 @app.route('/api/v1/companies/<id>', methods=['GET'])
 def get_company(id):
+    if not identify_user_session():
+        return jsonify({
+            'status': 'error',
+            'message': 'Unable to authorize user. Please review your credentials.'
+        }), 400
     return Company.get_by_id(id)
 
 @app.route('/api/v1/companies_by_name/<name>', methods=['GET'])
 def get_company_by_name(name):
+    if not identify_user_session():
+        return jsonify({
+            'status': 'error',
+            'message': 'Unable to authorize user. Please review your credentials.'
+        }), 400
     return Company.get_by_name(name)
 
 @app.route('/api/v1/companies', methods=['POST'])
@@ -213,6 +250,7 @@ def insert_company():
         data = request.json['data']
         company = Company(data)
         company.save()
+        
         return jsonify({
             'status': 'success',
             'message': 'Company created successfully',
@@ -233,7 +271,53 @@ def insert_company():
             'message': 'An error occurred while inserting the company'
         }), 500
 
+@app.route('/api/v1/users/<id>', methods=['GET'])
+def get_user(id):
+    if not identify_user_session():
+        return jsonify({
+            'status': 'error',
+            'message': 'Unable to authorize user. Please review your credentials.'
+        }), 400
+    return User.get_by_id(id)
+
+@app.route('/api/v1/users_by_name/<name>', methods=['GET'])
+def get_user_by_name(name):
+    if identify_user_session() == None:
+        return jsonify({
+            'status': 'error',
+            'message': 'Unable to authorize user. Please review your credentials.'
+        }), 400
+    return User.get_by_name(name)
+
 @app.route('/api/v1/subscribe', methods=['POST'])
+def subscribe_user():
+    try:
+        data = request.json['data']
+        user = User(data)
+        user.save()
+
+        return jsonify({
+            'status': 'success',
+            'message': 'User created successfully',
+            'data': {
+                'id': user.id,
+                'data': user.data
+            }
+        }), 201
+    except KeyError as e:
+        app.logger.error(f'KeyError creating user. Check the "data" field in your JSON. Error: {str(e)}')
+        return jsonify({
+            'status': 'error',
+            'message': 'Missing required field: data'
+        }), 400
+    except Exception as e:
+        app.logger.error(f'Error creating user: {str(e)}')
+        return jsonify({
+            'status': 'error',
+            'message': 'An error occurred during creation'
+        }), 500
+
+@app.route('/api/v1/experimental/notion-subscribe')
 def add_notion_subscriber():
     notion_token = os.getenv('NOTION_TOKEN', '')
     notion_db_id = os.getenv('NOTION_DB_ID', '')
