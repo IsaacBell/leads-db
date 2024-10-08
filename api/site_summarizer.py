@@ -3,7 +3,6 @@ from bs4 import BeautifulSoup
 from openai import OpenAI
 from urllib.parse import urljoin
 
-# placeholder - will replace
 class SiteSummarizer:
     def __init__(self, api_key):
         self.client = OpenAI(api_key=api_key)
