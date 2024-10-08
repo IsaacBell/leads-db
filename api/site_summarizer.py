@@ -72,7 +72,6 @@ class SiteSummarizer:
           print(f"OpenAI API request exceeded rate limit: {e}")
           pass
 
-
         # Find and follow internal links
         summaries = []
         for link in soup.find_all("a"):
