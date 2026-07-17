@@ -1,6 +1,6 @@
 # LeadsDB
 
-(**note - **this codebase for the initial prototype app is now archived)
+**V2 development underway.** Preview available — email [contact@isaacbell.io](mailto:contact@isaacbell.io).
 
 ![image](https://github.com/IsaacBell/leads-db/assets/2613157/5b5b3cf3-010f-40e1-a6a5-e1b03bdb6923)
 
