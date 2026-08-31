@@ -1,0 +1,21 @@
+[project]
+name = "leadsdb-engine"
+version = "0.1.0"
+description = "LeadsDB V2 — certstream consumer, DNS/HTTP classifier, LLM gate, Neon Postgres"
+requires-python = ">=3.12"
+dependencies = [
+    "websocket-client>=1.8",
+    "psycopg[binary]>=3.2",
+    "httpx>=0.28",
+    "dnspython>=2.7",
+    "beautifulsoup4>=4.12",
+    "lxml>=5.1",
+    "python-dateutil>=2.9",
+    "pydantic>=2.0",
+    "structlog>=24.0",
+]
+
+[project.scripts]
+leadsdb-ingest = "leadsdb_engine.processors.certstream_ingestor:main"
+leadsdb-enrich = "leadsdb_engine.processors.domain_enricher:main"
+leadsdb-score = "leadsdb_engine.processors.entity_scorer:main"

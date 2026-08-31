@@ -3,32 +3,31 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "flask:install": "FLASK_DEBUG=1 pip3 install -r requirements.txt",
-    "flask-dev": "python3 -m flask --debug --app api/index run -p 5328",
     "next-dev": "next dev",
-    "dev": "concurrently \"pnpm run next-dev\" \"pnpm run flask-dev\"",
-    "start": "concurrently \"pnpm run next-dev\" \"pnpm run flask-dev\"",
+    "dev": "next dev",
     "build": "next build",
     "lint": "next lint"
   },
   "dependencies": {
-    "@astrajs/client": "^0.3.4",
-    "@datastax/astra-db-ts": "^0.1.4",
     "@heroicons/react": "^2.1.3",
     "@types/node": "20.1.4",
     "@types/react": "18.2.6",
     "@types/react-dom": "18.2.4",
     "autoprefixer": "10.4.14",
-    "concurrently": "^8.0.1",
-    "eslint": "8.40.0",
-    "eslint-config-next": "13.4.2",
     "evergreen-ui": "^7.1.9",
     "next": "13.4.3",
     "notistack": "^3.0.1",
+    "pg": "^8.23.0",
     "postcss": "8.4.23",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "tailwindcss": "3.3.2",
     "typescript": "5.0.4"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.23.1"
   }
 }
