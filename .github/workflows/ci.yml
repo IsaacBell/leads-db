@@ -144,7 +144,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: apps/leads-db
+        working-directory: .
     steps:
       - uses: actions/checkout@v4
 
@@ -158,7 +158,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: apps/leads-db
+        working-directory: .
     steps:
       - uses: actions/checkout@v4
 
@@ -172,7 +172,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: apps/leads-db
+        working-directory: .
     steps:
       - uses: actions/checkout@v4
 
@@ -184,7 +184,6 @@ jobs:
 
   # ──────────────────────────────────────────────
   # SCA + secrets — run on every push/PR to main
-  # (formerly a weekly scheduled job in security.yml)
   # ──────────────────────────────────────────────
 
   audit:

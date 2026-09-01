@@ -1,5 +1,3 @@
-# leads-db task runner
-# install: brew install just   run: just <recipe>
 default:
     @just --list
 
@@ -15,7 +13,6 @@ install-hooks:
 enforce-pnpm:
     @bash scripts/guard-pnpm.sh < justfile
 
-# Run all local guardrails (agent + CI). All scripts live in scripts/ — self-contained.
 enforce-all: enforce-pnpm
     @bash scripts/guard-broad-find.sh ""
     @bash scripts/guard-temp-files.sh ""

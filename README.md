@@ -10,34 +10,23 @@
 ![Next.js](https://img.shields.io/badge/Next.js-13-black.svg)
 ![Neon](https://img.shields.io/badge/DB-Neon_Postgres-green.svg)
 
-LeadsDB watches live Certificate Transparency logs, filters for real businesses, scores them with your own LLM, and tracks the pipeline through a built-in CRM. Bring your own keys — no vendor lock-in.
-
 </div>
 
 ---
 
-## How it works
-
-```
-CT logs ──► Ingestor ──► Enricher ──► Entity Scorer ──► Lead Promoter ──► Outreach
-  (live)      (domains)    (DNS+HTTP)    (LLM/BYOK)      (→ CRM)       (dispatch)
-```
-
-| Stage | What it does | Config |
-|---|---|---|
-| **Ingest** | Consumes certstream WebSocket, extracts SAN domains | `processors/certstream_ingestor.py` |
-| **Enrich** | DNS resolution, HTTP fetch, rule-based business classification | settings: `enricher` category |
-| **Score** | LLM scores domain business-potential using **your own OpenAI-compatible endpoint** | settings: `scorer` category (BYOK) |
-| **Promote** | Promotes scored domains into CRM companies + annotations | settings: `promoter` category |
-| **Outreach** | Multi-step email sequence dispatch through a pluggable transport | settings: `outreach` category |
-
-All pipeline tuning is stored in the `settings` table and re-read each cycle — no restarts needed to adjust thresholds, batch sizes, or swap your LLM endpoint.
 
 ---
 
 ## Quick start
 
 ### Prerequisites
+
+You will need just. Install it with one of the following:
+
+```shell
+% brew install just
+% apt install just
+```
 
 | Dependency | Version |
 |---|---|
@@ -57,17 +46,21 @@ cd leads-db
 pnpm install
 
 # Engine (Python)
+# [@todo - install setup should be in justfile]
 cd engine && uv sync --extra dev && cd ..
 ```
 
 ### Set up the database
 
-LeadsDB runs on [Neon](https://neon.tech) Postgres (free tier — scale-to-zero, serverless). Set your connection string:
+Set up Postgres. You can use a free provider like Neon, or create your own manually. 
 
-```bash
-export LDB_DATABASE_URL="postgresql://user:pass@host/db?sslmode=require"
-```
+Either way, when your database is created, save your connection string.
 
+Example:
+`postgresql://user:pass@host/db?sslmode=require`
+
+@todo - where the hell to save the connection string? In-app setting + env var fallback else prompt user to enter during install/setup.
+---
 Apply migrations:
 
 ```bash
@@ -76,17 +69,26 @@ just leadsdb-migrate
 
 ### Generate the settings encryption key
 
+@todo - this is awful awful awful. users just enter their key in a form and we do standard encryption on it. this is terrible
+
 BYOK API keys are stored **encrypted at rest** in the `settings` table. Generate a master key:
 
 ```bash
 python -c "import secrets,base64; print(base64.urlsafe_b64encode(secrets.token_bytes(32)).decode())"
 ```
 
+@todo - making users set encrypted env vars?????????????
+
 Set it as an environment variable (the only secret that lives outside the DB):
 
 ```bash
 export LDB_SETTINGS_ENCRYPTION_KEY="your-generated-key-here"
 ```
+
+
+
+
+@todo - THIS SUCKS
 
 ### Configure your LLM (BYOK)
 
@@ -120,6 +122,8 @@ pnpm dev   # Next.js dev server on localhost:3000
 ```
 
 ---
+
+@Todo - DO YOU NOT KNOW WHAT FUCKING BYOK MEANS???????? WHAT IS THIS SHITTY TABLE
 
 ## BYOK & security model
 
