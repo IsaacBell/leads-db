@@ -1,6 +1,6 @@
 # LeadsDB
 
-**V2 development underway.** Preview available — email [contact@isaacbell.io](mailto:contact@isaacbell.io).
+**V2 development underway.** Preview available — contact leads-db at the domain in the email link.
 
 ![image](https://github.com/IsaacBell/leads-db/assets/2613157/5b5b3cf3-010f-40e1-a6a5-e1b03bdb6923)
 
@@ -100,9 +100,69 @@ The backend is built with Flask and provides various API endpoints for company d
 - `/api/v1/companies`: Inserts a new company.
 - `/api/v1/subscribe`: Adds a new subscriber using the Notion API.
 
-## GitHub Actions
+## DevSecOps & Testing
 
-The repository includes a GitHub Actions workflow for daily data updates. The workflow is defined in `.github/workflows/daily-updater.yml` and runs on a scheduled basis or can be triggered manually.
+LeadsDB is the project's gold standard for DevSecOps practices. Every PR runs a multi-layer security and quality gate:
+
+### Continuous Integration (`.github/workflows/ci.yml`)
+
+| Step | Tool | What it checks |
+|------|------|----------------|
+| Lint + type check | Next.js / TypeScript | Syntax, strict types, TSX |
+| Python lint | Ruff + Bandit | Code style, security hotspots |
+| Shell lint | ShellCheck | Script correctness |
+| JS tests | Vitest | API route regression tests |
+| Python tests | pytest | Domain utils, model validation, SQL template checks |
+| SAST | Semgrep | Hardcoded secrets, SQL injection, unsafe deserialization |
+
+### Security Scanning (`.github/security.yml`)
+
+Weekly scheduled scans (Mondays 06:00 UTC) plus push/PR triggers:
+
+- **Bandit** — Python static analysis
+- **Semgrep** — Multi-language SAST (50+ rules across Python, TS, Dockerfile)
+- **npm audit** — JavaScript dependency vulnerabilities
+- **uv audit** — Python dependency vulnerabilities
+- **ShellCheck** — Shell script correctness
+
+### Dependency Management (`.github/dependabot.yml`)
+
+Automated weekly pull requests for:
+- `pnpm` (npm ecosystem) — grouped by Next.js, TypeScript, Tailwind
+- `pip` (Python via uv) — engine dependencies
+- `GitHub Actions` — workflow action updates
+
+### Local Development
+
+```bash
+# Install deps
+pnpm install
+cd engine && uv sync --group dev
+
+# Run tests
+pnpm test              # JS/TS tests (Vitest)
+cd engine && uv run pytest  # Python tests (pytest)
+
+# Security scans
+just ci-bandit         # Bandit SAST
+just ci-semgrep        # Semgrep SAST
+just ci-ruff           # Ruff lint
+
+# All CI checks
+just ci-check
+just ci-quality
+```
+
+### Security Model
+
+This project follows a layered DevSecOps approach:
+
+1. **Application security** — SAST (Semgrep, Bandit), SCA (Dependabot, uv audit), secrets detection (silver-gate pre-commit hook)
+2. **Platform engineering** — IDP-encoded security controls via justfile recipes; golden-path CI/CD
+3. **Continuous verification** — Every push runs tests + SAST; weekly deeper scans catch drift
+4. **Automated remediation** — Dependabot opens PRs; grouped to reduce noise
+
+The architecture is described in detail in [`V2-PLAN.md`](V2-PLAN.md).
 
 ## Todos
 

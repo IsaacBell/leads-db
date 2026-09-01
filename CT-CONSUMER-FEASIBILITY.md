@@ -95,15 +95,9 @@ https://wyvern.ct.digicert.com/2026h2/ct/v1/get-sth
 
 The response:
 
-```json
-{
-  "tree_size": 1816328780,
-  "timestamp": 1788147780302,
-  ...
-}
-```
+The response reports a tree size of roughly 1.8 billion entries.
 
-**That's 1.8 billion entries.** One log shard, covering roughly six months. 1.8 billion certificates.
+**That's ~1.8B entries.** One log shard, covering roughly six months. 1.8 billion certificates.
 
 To consume this log, you'd maintain a cursor (your last-fetched position) and repeatedly fetch batches of entries from your cursor up to `tree_size`. The log tells you the current size; you fetch sequentially.
 
@@ -125,14 +119,7 @@ https://storage.googleapis.com/parcelyard2026h2.prod.certificate.transparency.go
 
 The response (plaintext, not JSON):
 
-```
-ParcelYard2026h2
-1112863393
-AAAAAAMzZaS0p7W... (root hash)
-...
-```
-
-Tree size: **1,112,863,393** entries.
+The checkpoint reports a tree size of roughly 1.1 billion entries.
 
 ### Let's Encrypt's Sycamore
 
@@ -140,7 +127,7 @@ Tree size: **1,112,863,393** entries.
 https://mon.sycamore.ct.letsencrypt.org/2026h2/checkpoint
 ```
 
-Tree size: **715,693,389** entries.
+Tree size: roughly 715 million entries.
 
 This checkpoint format is defined by the Static CT API: first line is the log name, second line is the tree size, third line is the root hash, followed by signature data.
 

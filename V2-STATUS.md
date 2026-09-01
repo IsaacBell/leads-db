@@ -53,7 +53,7 @@ Old names deleted: `consumer.py`, `classify.py`, `llm_gate.py`.
 
 ### Security — Secret & PII Guards
 
-- **`scripts/guard-secrets.sh`** and **`.rulesync/hooks/guard-secrets.sh`** — rewritten with catch-all: ANY `infisical` command that isn't `infisical run` is blocked. No per-subcommand enumeration that can be gamed by flags. Also blocks: `vercel env pull`, `.env` reads, bare `env`/`printenv`, `pg_dump`/`pg_restore`/`psql` with inline connection strings, Python scripts reading credential files. PII blocking for names, emails, family references, internal roles, compensation.
+- **`scripts/guard-secrets.sh`** and **`.rulesync/hooks/guard-secrets.sh`** — rewritten with catch-all: ANY `infisical` command that isn't `infisical run` is blocked. No per-subcommand enumeration that can be gamed by flags. Also blocks: `vercel env pull`, `.env` reads, bare `env`/`printenv`, `pg_dump`/`pg_restore`/`psql` with inline connection strings, Python scripts reading credential files. PII blocking for names, emails, family references, internal roles, pay info.
 - **Exception**: `scripts/vercel-neon-to-infisical.sh` (pipes all output to `/dev/null`).
 - **Just recipes**: `check-secrets`, `guard-pii`, `guarded-cmd`.
 

@@ -1,0 +1,194 @@
+# Semgrep SAST rules for leads-db.
+# Run locally:   semgrep --config=.semgrep.yml
+# Run in CI:     semgrep ci (uses this file when SEMGREP_APP_TOKEN is set)
+#
+# This is the "gold standard" configuration — rules are organized by language
+# and severity so the CI workflow can tune its exit behavior.
+
+rules:
+  # ──────────────────────────────────────────────
+  # TypeScript / Next.js
+  # ──────────────────────────────────────────────
+
+  - id: no-hardcoded-secrets
+    languages: [ts, js, typescript, javascript]
+    severity: ERROR
+    message: >-
+      Hardcoded credential or secret found. Use environment variables
+      instead (imported via process.env).
+    patterns:
+      - pattern-either:
+          - pattern: |
+              $KEY = "..."
+          - pattern: |
+              const $KEY = "..."
+          - pattern: |
+              let $KEY = "..."
+      - metavariable-regex:
+          metavariable: $KEY
+          regex: (?i).*(api.?key|secret|password|token|credential).*
+      - pattern-not-regex: process\.env\.\w+
+    fix: process.env.YOUR_VAR_NAME
+
+  - id: no-console-error-without-logger
+    languages: [ts, js, typescript, javascript]
+    severity: WARNING
+    message: >-
+      console.error() found. Consider using a structured logger
+      instead so errors are captured in production observability.
+    pattern: console.error(...)
+
+  - id: sql-injection-raw-query
+    languages: [ts, js, typescript, javascript]
+    severity: ERROR
+    message: >-
+      Detected a raw SQL query with string interpolation.
+      Parameterized queries (via pg's $1, $2 placeholders) are required.
+    patterns:
+      - pattern: pool.query(`...${...}...`)
+      - pattern: client.query(`...${...}...`)
+
+  - id: no-eval
+    languages: [ts, js, typescript, javascript]
+    severity: ERROR
+    message: >-
+      eval() is a security risk. Use a safe parser or
+      Function constructor only when absolutely necessary.
+    patterns:
+      - pattern: eval(...)
+
+  # ──────────────────────────────────────────────
+  # Python
+  # ──────────────────────────────────────────────
+
+  - id: python-no-hardcoded-secrets
+    languages: [python]
+    severity: ERROR
+    message: >-
+      Hardcoded credential or secret found. Use environment variables
+      (os.environ.get("VAR")) instead.
+    patterns:
+      - pattern-either:
+          - pattern: |
+              $KEY = "..."
+          - pattern: |
+              $KEY = '...'
+      - metavariable-regex:
+          metavariable: $KEY
+          regex: (?i).*(api.?key|secret|password|token|credential).*
+      - pattern-not-regex: os\.environ\.(get|getenv|__getitem__)\(
+    fix: os.environ.get("YOUR_VAR_NAME", "")
+
+  - id: python-request-without-timeout
+    languages: [python]
+    severity: WARNING
+    message: >-
+      HTTP request without an explicit timeout. Long-running or
+      hanging requests can block workers. Add timeout=... or
+      use httpx with a configured timeout client.
+    patterns:
+      - pattern-either:
+          - pattern: requests.get(...)
+          - pattern: requests.post(...)
+          - pattern: httpx.get(...)
+          - pattern: httpx.post(...)
+      - pattern-not-inside: |
+          timeout=$_VALUE
+      - pattern-not-inside: |
+          httpx.AsyncClient(timeout=...)
+
+  - id: python-subprocess-with-shell
+    languages: [python]
+    severity: WARNING
+    message: >-
+      subprocess with shell=True is a command-injection risk.
+      Pass arguments as a list or use shlex.split().
+    patterns:
+      - pattern: subprocess.call(..., shell=True, ...)
+      - pattern: subprocess.Popen(..., shell=True, ...)
+      - pattern: os.system(...)
+      - pattern: os.popen(...)
+
+  - id: python-sql-injection
+    languages: [python]
+    severity: ERROR
+    message: >-
+      SQL query built with string formatting or concatenation.
+      Use parameterized queries (%%s or %(name)s placeholders
+      with psycopg) to prevent injection.
+    patterns:
+      - pattern-either:
+          - pattern: |
+              f"...{...}..."
+          - pattern: |
+              "..." + $VAR + "..."
+      - pattern-inside: |
+          cur.execute(...)
+      - pattern-not-regex: cur\.execute\([^)]*%\(
+
+  - id: python-unsafe-yaml-load
+    languages: [python]
+    severity: ERROR
+    message: >-
+      Using yaml.load() without a safe Loader can lead to
+      arbitrary code execution. Use yaml.safe_load() instead.
+    patterns:
+      - pattern: yaml.load(...)
+      - pattern-not: yaml.load(..., Loader=yaml.SafeLoader)
+
+  - id: python-pickle-unsafe
+    languages: [python]
+    severity: ERROR
+    message: >-
+      pickle.load/loads can execute arbitrary code during
+      deserialization. Prefer JSON or a safe serialization format.
+    patterns:
+      - pattern: pickle.load(...)
+      - pattern: pickle.loads(...)
+
+  # ──────────────────────────────────────────────
+  # Infrastructure / Docker
+  # ──────────────────────────────────────────────
+
+  - id: docker-writable-root
+    languages: [dockerfile]
+    severity: WARNING
+    message: >-
+      The WORKDIR is writable by default. Consider using a
+      non-root user with USER directive for production containers.
+    patterns:
+      - pattern: |
+          FROM ...
+      - pattern-not-inside: |
+          USER ...
+
+  - id: docker-no-tag-pin
+    languages: [dockerfile]
+    severity: WARNING
+    message: >-
+      Base image tag is not pinned to a specific digest or
+      patch version. Use :tag@sha256:... or a specific
+      patch version for reproducible builds.
+    patterns:
+      - pattern: FROM $IMAGE:$TAG
+      - metavariable-regex:
+          metavariable: $TAG
+          regex: ^(latest|[a-z]+)$
+
+  # ──────────────────────────────────────────────
+  # Generic
+  # ──────────────────────────────────────────────
+
+  - id: generic-insecure-random
+    languages: [generic]
+    severity: WARNING
+    message: >-
+      Use of a predictable random generator. Use secrets.token_*
+      (Python) or crypto.randomBytes (Node.js) for security-sensitive
+      randomness.
+    patterns:
+      - pattern-either:
+          - pattern: random.random()
+          - pattern: Math.random()
+      - pattern-not-inside: |
+          # Non-security usage
