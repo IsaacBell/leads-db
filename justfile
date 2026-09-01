@@ -127,6 +127,16 @@ crm-promote:
 crm-outreach:
     uv run -m leadsdb_engine.processors.sequence_dispatcher
 
+# --- Exa ---
+
+# Search Exa with a query (EXA_API_KEY from Infisical).
+exa-search query:
+    uv run -m leadsdb_engine.exa search {{query}}
+
+# Discover contacts for a company domain via Exa.
+exa-discover domain:
+    uv run -m leadsdb_engine.exa discover-contacts {{domain}}
+
 # --- guardrails ---
 
 # Scan a command string for secrets. Pipe mode: `echo "cat .env" | just check-secrets`; arg mode: `just check-secrets "cat .env"`.
@@ -161,6 +171,21 @@ codeant:
 # Run CodeAnt secrets scan on the last commit.
 codeant-secrets:
     codeant secrets --last-commit
+
+# --- Vercel deploy ---
+
+# Build the Next.js frontend.
+build:
+    pnpm build
+
+# Deploy to Vercel production. Requires `vercel login` + `vercel link` once.
+deploy:
+    pnpm build
+    vercel deploy --prod
+
+# Link the local project to Vercel (one-time setup).
+vercel-link:
+    vercel link
 
 # --- CI ---
 
