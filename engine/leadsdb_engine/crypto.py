@@ -1,13 +1,10 @@
 """AES-GCM encryption for secret settings values.
 
-LeadsDB stores user-supplied keys (BYOK: model inference API keys, outreach
-delivery keys, etc.) encrypted at rest in the `settings` table, never as plain
-text and never in environment variables.
+user-supplied keys (BYOK: model inference API keys, outreach
+delivery keys, etc.) are encrypted at rest in the `settings` table.
 
-The single secret that lives outside the database is the master key
-(`LDB_SETTINGS_ENCRYPTION_KEY`): a urlsafe-base64-encoded 32-byte key, injected
-via Infisical. Without it, secret settings read back as `None` and the
-processors that need them stay idle — a deliberate, safe-by-default posture.
+the master key is LDB_SETTINGS_ENCRYPTION_KEY: a urlsafe-base64-encoded 32-byte key, injected
+via Infisical.
 
 Ciphertext layout: `nonce(12 bytes) || ciphertext+tag` (AES-GCM, 256-bit key).
 """
@@ -23,10 +20,8 @@ MASTER_KEY_ENV = "LDB_SETTINGS_ENCRYPTION_KEY"
 _NONCE_BYTES = 12
 _KEY_BYTES = 32
 
-
 class CryptoError(RuntimeError):
     """Raised when the master key is missing/malformed or ciphertext is invalid."""
-
 
 def _master_key() -> bytes | None:
     """Return the 32-byte master key, or None if the env var is unset.
@@ -43,7 +38,7 @@ def _master_key() -> bytes | None:
         raise CryptoError(f"{MASTER_KEY_ENV} is not valid base64: {exc}") from exc
     if len(key) != _KEY_BYTES:
         raise CryptoError(
-            f"{MASTER_KEY_ENV} must decode to {_KEY_BYTES} bytes, got {len(key)}. "
+            f"{MASTER_KEY_ENV} must decode to {_KEY_BYTES} bytes, got {len(key)}. " +
             "Generate one with: python -c \"import secrets,base64;print(base64.urlsafe_b64encode(secrets.token_bytes(32)).decode())\""
         )
     return key
@@ -62,7 +57,7 @@ def encrypt(plaintext: str) -> bytes:
     key = _master_key()
     if key is None:
         raise CryptoError(
-            f"cannot encrypt — {MASTER_KEY_ENV} is not set. "
+            f"cannot encrypt — {MASTER_KEY_ENV} is not set. " +
             "Generate one with: python -c \"import secrets,base64;print(base64.urlsafe_b64encode(secrets.token_bytes(32)).decode())\""
         )
     nonce = os.urandom(_NONCE_BYTES)
@@ -80,8 +75,8 @@ def decrypt(token: bytes | bytearray | memoryview) -> str:
     key = _master_key()
     if key is None:
         raise CryptoError(
-            f"cannot decrypt — {MASTER_KEY_ENV} is not set but an encrypted "
-            "secret exists in the settings table. Set the key to read it, or clear "
+            f"cannot decrypt — {MASTER_KEY_ENV} is not set but an encrypted " +
+            "secret exists in the settings table. Set the key to read it, or clear " +
             "the secret row to idle the dependent processor."
         )
     nonce, ct = token[:_NONCE_BYTES], token[_NONCE_BYTES:]
@@ -91,9 +86,3 @@ def decrypt(token: bytes | bytearray | memoryview) -> str:
         raise CryptoError(
             f"decryption failed (wrong master key or corrupted ciphertext): {exc}"
         ) from exc
-
-
-def zeroize(buf: bytearray) -> None:
-    """Best-effort wipe of a mutable buffer holding plaintext (defense in depth)."""
-    for i in range(len(buf)):
-        buf[i] = 0
