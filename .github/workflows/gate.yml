@@ -5,6 +5,14 @@ on:
     branches: [main]
 
 jobs:
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+
   enforce:
     runs-on: ubuntu-latest
     steps:

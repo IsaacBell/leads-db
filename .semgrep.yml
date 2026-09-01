@@ -45,8 +45,9 @@ rules:
       Detected a raw SQL query with string interpolation.
       Parameterized queries (via pg's $1, $2 placeholders) are required.
     patterns:
-      - pattern: pool.query(`...${...}...`)
-      - pattern: client.query(`...${...}...`)
+      - pattern-either:
+          - pattern: pool.query(`...${...}...`)
+          - pattern: client.query(`...${...}...`)
 
   - id: no-eval
     languages: [ts, js, typescript, javascript]
@@ -145,35 +146,6 @@ rules:
     patterns:
       - pattern: pickle.load(...)
       - pattern: pickle.loads(...)
-
-  # ──────────────────────────────────────────────
-  # Infrastructure / Docker
-  # ──────────────────────────────────────────────
-
-  - id: docker-writable-root
-    languages: [dockerfile]
-    severity: WARNING
-    message: >-
-      The WORKDIR is writable by default. Consider using a
-      non-root user with USER directive for production containers.
-    patterns:
-      - pattern: |
-          FROM ...
-      - pattern-not-inside: |
-          USER ...
-
-  - id: docker-no-tag-pin
-    languages: [dockerfile]
-    severity: WARNING
-    message: >-
-      Base image tag is not pinned to a specific digest or
-      patch version. Use :tag@sha256:... or a specific
-      patch version for reproducible builds.
-    patterns:
-      - pattern: FROM $IMAGE:$TAG
-      - metavariable-regex:
-          metavariable: $TAG
-          regex: ^(latest|[a-z]+)$
 
   # ──────────────────────────────────────────────
   # Generic

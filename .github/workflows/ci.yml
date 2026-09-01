@@ -64,7 +64,7 @@ jobs:
 
       - name: shellcheck
         run: |
-          shellcheck scripts/*.sh 2>/dev/null || echo "shellcheck warnings found"
+          shellcheck scripts/*.sh
 
   test-python:
     runs-on: ubuntu-latest
@@ -131,6 +131,45 @@ jobs:
       - name: Run Semgrep SAST
         uses: semgrep/semgrep-action@v1
         with:
-          config: .semgrep.yml
+          config: .semgrep.yml p/owasp-top-ten p/python p/typescript p/react
         env:
           SEMGREP_TIMEOUT: 120
+
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install pnpm deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install just
+        uses: extractions/setup-just@v2
+
+      - name: Python SCA
+        run: |
+          cd engine && uvx pip-audit
+
+      - name: JS SCA
+        run: |
+          pnpm audit --audit-level=high
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2
