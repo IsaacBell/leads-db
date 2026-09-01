@@ -1,9 +1,5 @@
 # Mining Free Data for B2B Leads - A Practical Guide
 
-**Author:** Isaac Bell
-
-**Date:** 2026-08-30
-
 ---
 
 Scraping business directories is slow. Buying lists is expensive and full of stale data. Can we pull free data instead? Yes we can, by piggybacking on Certificate Transparency (CT) logs.
