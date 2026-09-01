@@ -121,7 +121,8 @@ crm-annotation-delete id:
 
 # Promote scored domains into CRM companies.
 crm-promote:
-    uv run -m leadsdb_engine.processors.lead_promoter
+	uv run -m leadsdb_engine.processors.lead_promoter
+
 
 # Dispatch sequence outreach for promoted companies.
 crm-outreach:

@@ -1,176 +1,263 @@
+<div align="center">
+
 # LeadsDB
 
-**V2 development underway.** Preview available — contact leads-db at the domain in the email link.
+**Open-source B2B lead pipeline — CT-log discovery → enrichment → LLM scoring → CRM → outreach**
 
-![image](https://github.com/IsaacBell/leads-db/assets/2613157/5b5b3cf3-010f-40e1-a6a5-e1b03bdb6923)
+![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
+![CI](https://github.com/IsaacBell/leads-db/actions/workflows/ci.yml/badge.svg)
+![Python](https://img.shields.io/badge/python-3.12+-yellow.svg)
+![Next.js](https://img.shields.io/badge/Next.js-13-black.svg)
+![Neon](https://img.shields.io/badge/DB-Neon_Postgres-green.svg)
 
+LeadsDB watches live Certificate Transparency logs, filters for real businesses, scores them with your own LLM, and tracks the pipeline through a built-in CRM. Bring your own keys — no vendor lock-in.
+
+</div>
 
 ---
-## Introduction
-LeadsDB is a lead generation system. On the back end, the system performs daily ingestions of company data as well as Newly Registered Domains (NRDs). It attempts to identify companies which may serve as candidate leads, then presents the best results to the user (see below). 
 
-1. ✓ Lead data can be retrieved through a REST API. 
-2. 🚧 Users receive email blasts of a few companies each week which match their preferences. (Under construction: Approx. 85% completed)
-3. 🔴 Users can integrate LeadsDB into their Hubspot or Salesforce projects, and leads will populate directly in their existing system. (Not started)
-
-This repository is home to the user-facing front end, as well as the user-facing REST API. All code related to data ingestion exists in a separate, [private micro-client](https://github.com/IsaacBell/nrd-poll). 
-
-This repository integrates a Next.js frontend with a Flask backend. For data storage, an [external Cassandra database](https://astra.datastax.com/) is used which then forwards data to external data warehouses through CDC trigger procedures. It includes features such as automatic NRD ingestion, [company data enrichment](https://blog.hubspot.com/sales/data-enrichment) using [Abstract API](https://docs.abstractapi.com/company-enrichment), and subscriber management using the [Notion API](https://github.com/btahir/notion-capture).
-
-The app is automatically deployed to [GCP](https://cloud.google.com/) Cloud Run, where it lives as a stateless app. Importantly, that means that contributors should not add code which saves state locally. We are loosely following a trunk-based branching strategy which will be formalized once Phase 2 is complete.
-
-## Prerequisites
-
-- Node.js
-- Python 3.x
-- pip package manager
-
-## Getting Started
-
-### Clone the repository:
+## How it works
 
 ```
-git clone https://github.com/IsaacBell/leads-db.git
-cd leads-db
+CT logs ──► Ingestor ──► Enricher ──► Entity Scorer ──► Lead Promoter ──► Outreach
+  (live)      (domains)    (DNS+HTTP)    (LLM/BYOK)      (→ CRM)       (dispatch)
 ```
 
-### Install the dependencies:
+| Stage | What it does | Config |
+|---|---|---|
+| **Ingest** | Consumes certstream WebSocket, extracts SAN domains | `processors/certstream_ingestor.py` |
+| **Enrich** | DNS resolution, HTTP fetch, rule-based business classification | settings: `enricher` category |
+| **Score** | LLM scores domain business-potential using **your own OpenAI-compatible endpoint** | settings: `scorer` category (BYOK) |
+| **Promote** | Promotes scored domains into CRM companies + annotations | settings: `promoter` category |
+| **Outreach** | Multi-step email sequence dispatch through a pluggable transport | settings: `outreach` category |
 
-```
-pnpm install
-python -m spacy download en_core_web_md
-pip install -r requirements.txt
-```
+All pipeline tuning is stored in the `settings` table and re-read each cycle — no restarts needed to adjust thresholds, batch sizes, or swap your LLM endpoint.
 
-### Set up environment variables:
+---
 
-- Create a `.env` file in the root directory.
-- Add the following variables to the `.env` file:
-  - `ASTRA_DB_API_ENDPOINT`: Astra DB API endpoint URL
-  - `ASTRA_DB_APPLICATION_TOKEN`: Astra DB application token
-  - `PULSAR_STREAMING_API_TOKEN`: Pulsar streaming API token
-  - `ASTRA_DB_STREAMING_URL`: Astra DB streaming URL
-  - `ABSTRACT_API_COMPANY_ENRICHMENT_API_URL`: Abstract API company enrichment URL
-  - `ABSTRACT_API_COMPANY_ENRICHMENT_API_KEY`: Abstract API company enrichment API key
-  - `ABSTRACT_API_SCRAPE_URL`: Abstract API scrape URL
-  - `ABSTRACT_API_SCRAPE_API_KEY`: Abstract API scrape API key
-  - `NOTION_TOKEN`: Notion API token
-  - `NOTION_DB_ID`: Notion database ID
-  - `OPENAI_API_KEY`: OpenAI API Key
-  - `KAFKA_URL`: Kafka broker address
-  - `KAFKA_USERNAME`: Kafka username
-  - `KAFKA_PASSWORD`: Kafka password
-  - `MOESIF_APP_ID`: Moesif API monetization platform
+## Quick start
 
-### Start the development servers:
+### Prerequisites
 
-```
-pnpm run dev
-```
+| Dependency | Version |
+|---|---|
+| Node.js | 18+ |
+| Python | 3.12+ |
+| [uv](https://docs.astral.sh/uv/) | latest |
+| [pnpm](https://pnpm.io) | 9+ |
+| [just](https://github.com/casey/just) | latest |
 
-This will concurrently start the Next.js frontend and the Flask backend.
-
-## Frontend
-
-The frontend is built using Next.js and React. It provides a user interface for entering email, country, and industry preferences to subscribe for weekly updates.
-
-### Key files:
-
-- `app/page.tsx`: The main page.
-- `utils/staticData.ts`: Contains static data for countries and industries.
-
-## Backend
-
-The backend is built with Flask and provides various API endpoints for company data management and subscriber management.
-
-### Key files:
-
-- `api/index.py`: The main Flask application file that defines the API routes and schedules background tasks.
-- `api/models`: All model classes.
-
-## API Endpoints
-
-- `/api/heartbeat`: Returns a heartbeat response to check if the server is running.
-- `/api/v1/company-enrichment`: Retrieves company data from the Abstract API using a provided domain.
-- `/api/v1/scrape`: Scrapes a web page using the Abstract API.
-- `/api/v1/_system/daily_merge`: Performs a daily merge of data.
-- `/api/v1/_system/ingestions`: Returns daily new registered domains (NRDs).
-- `/api/v1/companies/<id>`: Retrieves a company by its ID.
-- `/api/v1/companies_by_name/<name>`: Retrieves a company by its name.
-- `/api/v1/companies`: Inserts a new company.
-- `/api/v1/subscribe`: Adds a new subscriber using the Notion API.
-
-## DevSecOps & Testing
-
-LeadsDB is the project's gold standard for DevSecOps practices. Every PR runs a multi-layer security and quality gate:
-
-### Continuous Integration (`.github/workflows/ci.yml`)
-
-| Step | Tool | What it checks |
-|------|------|----------------|
-| Lint + type check | Next.js / TypeScript | Syntax, strict types, TSX |
-| Python lint | Ruff + Bandit | Code style, security hotspots |
-| Shell lint | ShellCheck | Script correctness |
-| JS tests | Vitest | API route regression tests |
-| Python tests | pytest | Domain utils, model validation, SQL template checks |
-| SAST | Semgrep | Hardcoded secrets, SQL injection, unsafe deserialization |
-
-### Security Scanning (`.github/security.yml`)
-
-Weekly scheduled scans (Mondays 06:00 UTC) plus push/PR triggers:
-
-- **Bandit** — Python static analysis
-- **Semgrep** — Multi-language SAST (50+ rules across Python, TS, Dockerfile)
-- **npm audit** — JavaScript dependency vulnerabilities
-- **uv audit** — Python dependency vulnerabilities
-- **ShellCheck** — Shell script correctness
-
-### Dependency Management (`.github/dependabot.yml`)
-
-Automated weekly pull requests for:
-- `pnpm` (npm ecosystem) — grouped by Next.js, TypeScript, Tailwind
-- `pip` (Python via uv) — engine dependencies
-- `GitHub Actions` — workflow action updates
-
-### Local Development
+### Clone & install
 
 ```bash
-# Install deps
+git clone https://github.com/IsaacBell/leads-db.git
+cd leads-db
+
+# Frontend
 pnpm install
-cd engine && uv sync --group dev
 
-# Run tests
-pnpm test              # JS/TS tests (Vitest)
-cd engine && uv run pytest  # Python tests (pytest)
-
-# Security scans
-just ci-bandit         # Bandit SAST
-just ci-semgrep        # Semgrep SAST
-just ci-ruff           # Ruff lint
-
-# All CI checks
-just ci-check
-just ci-quality
+# Engine (Python)
+cd engine && uv sync --extra dev && cd ..
 ```
 
-### Security Model
+### Set up the database
 
-This project follows a layered DevSecOps approach:
+LeadsDB runs on [Neon](https://neon.tech) Postgres (free tier — scale-to-zero, serverless). Set your connection string:
 
-1. **Application security** — SAST (Semgrep, Bandit), SCA (Dependabot, uv audit), secrets detection (silver-gate pre-commit hook)
-2. **Platform engineering** — IDP-encoded security controls via justfile recipes; golden-path CI/CD
-3. **Continuous verification** — Every push runs tests + SAST; weekly deeper scans catch drift
-4. **Automated remediation** — Dependabot opens PRs; grouped to reduce noise
+```bash
+export LDB_DATABASE_URL="postgresql://user:pass@host/db?sslmode=require"
+```
 
-The architecture is described in detail in [`V2-PLAN.md`](V2-PLAN.md).
+Apply migrations:
 
-## Todos
+```bash
+just leadsdb-migrate
+```
 
-- Use GCloud Build secret keys for the service account credential file
-- Finish building API governance system using Moesif
-- Set MOESIF_APP_ID in GCP
-- Migrate Cloud Build Python version to 3.12.1
+### Generate the settings encryption key
+
+BYOK API keys are stored **encrypted at rest** in the `settings` table. Generate a master key:
+
+```bash
+python -c "import secrets,base64; print(base64.urlsafe_b64encode(secrets.token_bytes(32)).decode())"
+```
+
+Set it as an environment variable (the only secret that lives outside the DB):
+
+```bash
+export LDB_SETTINGS_ENCRYPTION_KEY="your-generated-key-here"
+```
+
+### Configure your LLM (BYOK)
+
+Point the scorer at any OpenAI-compatible endpoint — OpenAI, DeepInfra, Vercel AI Gateway, vLLM, llama.cpp, Ollama's OpenAI-compat mode, etc. Use the settings CLI (or your DB client) to set:
+
+```sql
+-- Your endpoint and model (plaintext settings)
+UPDATE settings SET text_value = 'https://api.openai.com/v1/chat/completions' WHERE key = 'scorer_api_url';
+UPDATE settings SET text_value = 'gpt-4o-mini'                                    WHERE key = 'scorer_model';
+
+-- Your API key (encrypted at rest — use the settings CLI, not raw SQL)
+-- just settings-set-secret scorer_api_key "sk-..."
+```
+
+Until `scorer_api_url` and `scorer_model` are set, the scorer logs once and idles — it never guesses a default host.
+
+### Run the pipeline
+
+```bash
+just leadsdb-run   # starts all processors in sequence (Redis-style background loop)
+# or run individually:
+just leadsdb-enrich   # enrichment processor
+just leadsdb-score    # entity scorer (needs BYOK config above)
+just leadsdb-promote  # promoter (scored domains → CRM)
+```
+
+### Run the frontend
+
+```bash
+pnpm dev   # Next.js dev server on localhost:3000
+```
+
+---
+
+## BYOK & security model
+
+LeadsDB is **bring-your-own-key**. No AI provider is baked in. Your LLM endpoint, model, and API key are your choice.
+
+| What | Where | Encrypted? |
+|---|---|---|
+| LLM endpoint URL (`scorer_api_url`) | `settings` table | No — it's a URL |
+| LLM model name (`scorer_model`) | `settings` table | No — it's a model id |
+| LLM API key (`scorer_api_key`) | `settings` table | **Yes** — AES-256-GCM at rest |
+| Outreach transport key (`outreach_api_key`) | `settings` table | **Yes** — AES-256-GCM at rest |
+| Master encryption key (`LDB_SETTINGS_ENCRYPTION_KEY`) | Env var / Infisical | N/A — the key itself |
+| Database URL (`LDB_DATABASE_URL`) | Env var / Infisical | N/A — connection string |
+
+The only two environment variables are the database connection string and the settings encryption key. Everything else — endpoint URLs, model names, tuning knobs, workspace selectors, API keys — lives in the `settings` table and can be changed at runtime without a restart.
+
+---
+
+## Outreach transports
+
+Outreach is vendor-agnostic. The `outreach_transport` setting selects the adapter:
+
+| Transport | What it does | Status |
+|---|---|---|
+| `noop` | Logs what it would send — no real email. **Default.** | ✅ Built-in |
+| `resend` | Live sends via the Resend HTTP API (for maintainer testing) | ✅ Reference adapter |
+
+To add a provider: create `transports/<name>.py` implementing `EmailTransport`, register it in `transports/__init__.py`, and set `outreach_transport`. A fresh deploy cannot send cold email to anyone — the default is always log-only.
+
+---
+
+## Tech stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | Next.js 13, React 18, TypeScript, Tailwind |
+| API | Next.js API routes (replaces V1 Flask) |
+| Engine | Python 3.12+, asyncio, httpx, psycopg3 |
+| Database | Neon Postgres (serverless, scale-to-zero) |
+| Data source | Certificate Transparency logs via certstream |
+| LLM scoring | Any OpenAI-compatible endpoint (BYOK) |
+| Email outreach | Pluggable transport adapter (noop / resend / extensible) |
+| Secrets | AES-256-GCM encryption at rest, Infisical for the master key |
+
+---
+
+## CRM
+
+Built-in multi-tenant CRM with Safe Harbor PII masking. Contacts, companies, deals, annotations, social links — all with soft deletes and workspace isolation.
+
+```bash
+just crm-add "jane@example.com" --name "Jane Doe"     # add a lead (PII masked on read)
+just crm-list                                          # list (masked by default)
+just crm-list --reveal                                 # full PII (use with care)
+just crm-deal-add "Q3 retainer" --value 12000         # create a deal
+just crm-annotation-add contact 42 linkedin '{"headline":"CTO"}'  # enrich
+```
+
+---
+
+## Architecture
+
+See [`V2-PLAN.md`](V2-PLAN.md) for the full design doc and [`V2-STATUS.md`](V2-STATUS.md) for current state.
+
+```
+leads-db/
+├── app/                    # Next.js frontend + API routes
+├── engine/                 # Python pipeline
+│   └── leadsdb_engine/
+│       ├── processors/     # certstream, enricher, scorer, promoter, dispatcher
+│       ├── transports/     # email transport adapters (noop, resend)
+│       ├── crypto.py       # AES-GCM settings encryption
+│       ├── db.py           # Neon Postgres layer + settings read/write
+│       ├── crm.py          # CLI for contacts/deals/annotations
+│       ├── pii.py          # Safe Harbor HIPAA-18 masking
+│       └── domain_utils.py
+├── migrations/            # SQL migrations (001–009)
+├── scripts/               # Guardrails, CI helpers
+├── justfile               # Task runner (CRM, pipeline, CI, deploy)
+└── .github/               # CI, security scans, dependabot
+```
+
+---
+
+## DevSecOps
+
+Every PR runs a multi-layer security and quality gate:
+
+| Check | Tool | When |
+|---|---|---|
+| Lint + typecheck | Next.js / TypeScript | Push + PR |
+| Python lint | Ruff + Bandit | Push + PR |
+| JS tests | Vitest | Push + PR |
+| Python tests | pytest | Push + PR |
+| SAST | Semgrep (13 custom rules) | Push + PR |
+| Shell lint | ShellCheck | Push + PR |
+| Dependency audit | npm audit + uv audit + pip-audit | Weekly |
+| Deep security scan | Semgrep + Bandit | Weekly (Mon 06:00 UTC) |
+| Dep updates | Dependabot (grouped) | Weekly PRs |
+
+```bash
+just ci-check    # run everything CI runs
+just ruff         # python lint only
+just ci-bandit    # python SAST only
+```
+
+---
+
+## Roadmap
+
+- [x] CT-log ingestion → domain events
+- [x] DNS/HTTP enrichment + rule-based classification
+- [x] LLM entity scoring (BYOK, any OpenAI-compatible endpoint)
+- [x] CRM schema (contacts, companies, deals, annotations, social links)
+- [x] Lead promotion pipeline
+- [x] Outreach dispatch (pluggable transport, noop default)
+- [x] DevSecOps foundation (CI, SAST, secrets guard)
+- [ ] docker-compose for one-command local stack (Phase 1 goal)
+- [ ] Contact/email discovery (CT logs give domains, not people)
+- [ ] Freemium API keys + rate limiting (Phase 2)
+- [ ] Analytics funnel bridge to `analytics-engine`
+
+Full phase breakdown in [`V2-PLAN.md`](V2-PLAN.md).
+
+---
+
+## Contributing
+
+This project follows a trunk-based branching strategy. See the DevSecOps section above for the CI gate — every push must pass lint, tests, and SAST.
+
+```bash
+# Install hooks
+just install-hooks
+
+# Run the full local gate before pushing
+just ci-check
+```
 
 ## License
 
-This project is licensed under the MIT License.
+[MIT](LICENSE) — LeadsDB has been publicly MIT-licensed since 2024.
