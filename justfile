@@ -16,9 +16,11 @@ enforce-pnpm:
 enforce-all: enforce-pnpm
     @bash scripts/guard-broad-find.sh ""
     @bash scripts/guard-temp-files.sh ""
+    @bash scripts/guard-secrets.sh < /dev/null 2>/dev/null || true
     @echo "  ✓ enforce-pnpm passed"
     @echo "  ✓ guard-broad-find passed"
     @echo "  ✓ guard-temp-files passed"
+    @echo "  ✓ guard-secrets loaded"
 
 # --- silver-gate ---
 
@@ -114,6 +116,41 @@ crm-annotation-list:
 # Soft-delete an annotation.
 crm-annotation-delete id:
     uv run -m leadsdb_engine.crm annotation delete --id {{id}}
+
+# --- CRM Promotion ---
+
+# Promote scored domains into CRM companies.
+crm-promote:
+    uv run -m leadsdb_engine.processors.lead_promoter
+
+# Dispatch sequence outreach for promoted companies.
+crm-outreach:
+    uv run -m leadsdb_engine.processors.sequence_dispatcher
+
+# --- guardrails ---
+
+# Scan a command string for secrets. Pipe mode: `echo "cat .env" | just check-secrets`; arg mode: `just check-secrets "cat .env"`.
+check-secrets cmd="":
+    @bash -c ' \
+      if [ -n "{{cmd}}" ]; then \
+        echo "{{cmd}}" | bash scripts/guard-secrets.sh; \
+      elif [ ! -t 0 ]; then \
+        cat | bash scripts/guard-secrets.sh; \
+      else \
+        echo "Usage: echo \"<command>\" | just check-secrets  or  just check-secrets \"<command>\""; \
+        exit 1; \
+      fi'
+
+# Pipe command output through PII detection before it reaches the agent.
+guard-pii:
+    @bash scripts/guard-secrets.sh --content-scan
+
+# Run a command with full guardrails: secrets check + PII scan on output.
+guarded-cmd cmd:
+    @printf 'checking command...\n' && \
+    echo "{{cmd}}" | bash scripts/guard-secrets.sh && \
+    printf 'running...\n' && \
+    eval "{{cmd}}" | bash scripts/guard-secrets.sh --content-scan
 
 # --- CodeAnt ---
 
