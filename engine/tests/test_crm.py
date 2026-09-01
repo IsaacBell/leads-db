@@ -8,16 +8,18 @@ import pytest
 from pydantic import ValidationError
 
 from leadsdb_engine.db import (
-    INSERT_ANNOTATION,
+    Contact,
+    Deal,
+    Annotation,
+    SocialLink,
     INSERT_COMPANY,
     INSERT_CONTACT,
     INSERT_DEAL,
+    INSERT_ANNOTATION,
     UPDATE_CONTACT_TYPE,
-    Annotation,
-    Contact,
-    Deal,
 )
-from leadsdb_engine.pii import mask_annotation_row, mask_contact_row
+from leadsdb_engine.pii import mask_contact_row, mask_annotation_row
+
 
 # ── Models ──────────────────────────────────────────────────────────────
 
@@ -91,6 +93,13 @@ class TestCrmQueries:
     def test_insert_contact_includes_contact_type(self):
         assert "%(contact_type)s" in INSERT_CONTACT
         assert "contact_type = EXCLUDED.contact_type" in INSERT_CONTACT
+
+    def test_insert_contact_revives_soft_deleted_row(self):
+        # Regression: on upsert against a soft-deleted contact's email, the
+        # ON CONFLICT branch MUST clear deleted_at — otherwise the row stays
+        # invisible to all read paths (which filter WHERE deleted_at IS NULL)
+        # while INSERT reports success. Re-adding a deleted contact must revive it.
+        assert "deleted_at = NULL" in INSERT_CONTACT
 
     def test_insert_deal_returns_id(self):
         assert "INSERT INTO deals" in INSERT_DEAL

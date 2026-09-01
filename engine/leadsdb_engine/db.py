@@ -5,9 +5,9 @@ via the LDB_DATABASE_URL environment variable (injected by Infisical).
 """
 
 import os
-from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Any
+from datetime import datetime, timezone
+from typing import Any, Generator
 
 import psycopg
 from psycopg.rows import dict_row
@@ -46,8 +46,9 @@ def connect() -> Generator[psycopg.Connection, None, None]:
 @contextmanager
 def get_cursor():
     """Convenience: yield a cursor from a managed connection."""
-    with connect() as conn, conn.cursor() as cur:
-        yield cur
+    with connect() as conn:
+        with conn.cursor() as cur:
+            yield cur
 
 
 # --- Models -----------------------------------------------------------
@@ -283,6 +284,7 @@ DO UPDATE SET
     contact_type = EXCLUDED.contact_type,
     status = EXCLUDED.status,
     notes = COALESCE(EXCLUDED.notes, contacts.notes),
+    deleted_at = NULL,
     updated_at = NOW()
 RETURNING id
 """

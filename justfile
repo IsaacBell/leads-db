@@ -134,6 +134,18 @@ ci-check:
 ci-ruff:
     cd engine && uvx ruff check leadsdb_engine/
 
+# Ruff — check the engine (no DB needed).
+ruff:
+    cd engine && uvx ruff check leadsdb_engine/
+
+# Ruff — auto-fix the engine in place.
+ruff-fix:
+    cd engine && uvx ruff check --fix leadsdb_engine/
+
+# Ruff — check + format the engine.
+ruff-format:
+    cd engine && uvx ruff format leadsdb_engine/
+
 ci-bandit:
     cd engine && uvx bandit -r leadsdb_engine/ -f json -o /dev/null -ll
 

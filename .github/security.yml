@@ -34,7 +34,7 @@ jobs:
           path: engine/bandit-results.json
 
   npm-audit:
-    name: npm audit (JS deps)
+    name: pnpm audit (JS deps)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
