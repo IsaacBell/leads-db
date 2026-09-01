@@ -10,7 +10,6 @@ flagged as LLM candidates for the EntityScorer.
 """
 
 import asyncio
-import os
 import re
 import time
 from typing import Any
@@ -27,13 +26,14 @@ from leadsdb_engine.db import (
 from leadsdb_engine.processors.base import EnrichmentProcessor
 
 # ------------------------------------------------------------------
-# Env configuration
+# Configuration defaults.
+# Override these via the settings table (admin panel) — never env vars.
 # ------------------------------------------------------------------
 
-BATCH_SIZE = int(os.environ.get("ENRICHER_BATCH_SIZE", "50"))
-CONCURRENCY = int(os.environ.get("ENRICHER_CONCURRENCY", "10"))
-HTTP_TIMEOUT = float(os.environ.get("ENRICHER_HTTP_TIMEOUT", "10.0"))
-DNS_TIMEOUT = float(os.environ.get("ENRICHER_DNS_TIMEOUT", "5.0"))
+BATCH_SIZE = 50
+CONCURRENCY = 10
+HTTP_TIMEOUT = 10.0
+DNS_TIMEOUT = 5.0
 
 # ------------------------------------------------------------------
 # Keyword heuristics

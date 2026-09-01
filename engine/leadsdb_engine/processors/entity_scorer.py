@@ -10,7 +10,6 @@ Supports both local Ollama models and OpenAI-compatible APIs.
 
 import asyncio
 import json
-import os
 from typing import Any
 
 import httpx
@@ -19,17 +18,20 @@ from leadsdb_engine.db import connect
 from leadsdb_engine.processors.base import EnrichmentProcessor
 
 # ------------------------------------------------------------------
-# Env configuration
+# Configuration defaults.
+# Override these via the settings table (admin panel) — never env vars.
 # ------------------------------------------------------------------
 
-LLM_API_URL = os.environ.get("ENTITY_SCORER_API_URL", "http://localhost:11434/api/generate")
-LLM_MODEL = os.environ.get("ENTITY_SCORER_MODEL", "llama3.2")
-LLM_CONCURRENCY = int(os.environ.get("ENTITY_SCORER_CONCURRENCY", "5"))
-LLM_TIMEOUT = float(os.environ.get("ENTITY_SCORER_TIMEOUT", "30.0"))
-LLM_THRESHOLD = float(os.environ.get("ENTITY_SCORER_THRESHOLD", "0.5"))
-LLM_API_KEY = os.environ.get("ENTITY_SCORER_API_KEY", "")
-LLM_OPENAI_MODE = os.environ.get("ENTITY_SCORER_OPENAI", "").lower() in ("1", "true", "yes")
-ENTITY_SCORER_MAX_SCORED = int(os.environ.get("ENTITY_SCORER_MAX_SCORED", "0"))
+LLM_CONCURRENCY = 5
+LLM_TIMEOUT = 30.0
+LLM_THRESHOLD = 0.5
+ENTITY_SCORER_MAX_SCORED = 0
+
+# Model identity — set via settings table when an LLM is configured.
+LLM_API_URL = ""
+LLM_MODEL = ""
+LLM_API_KEY = ""
+LLM_OPENAI_MODE = False
 
 # ------------------------------------------------------------------
 # Prompt
@@ -136,6 +138,12 @@ class EntityScorer(EnrichmentProcessor):
 
     async def _loop(self) -> None:
         """Repeatedly fetch LLM-ready domains, score them, and update the DB."""
+        if not LLM_API_URL:
+            self.logger.error(
+                "entity scorer not configured — set LLM_API_URL via settings table"
+            )
+            return
+
         self.logger.info(
             "entity scorer started",
             model=LLM_MODEL,

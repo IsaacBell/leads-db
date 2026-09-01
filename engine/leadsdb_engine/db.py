@@ -465,3 +465,29 @@ SET deleted_at = NOW(), updated_at = NOW()
 WHERE id = %(id)s AND deleted_at IS NULL
 RETURNING id
 """
+
+
+# --- Settings queries --------------------------------------------------
+# The settings table stores tunable pipeline parameters. Processors read
+# them at the start of each cycle; the admin panel writes them.
+# All values have code-level defaults — the table just overrides.
+
+GET_SETTING = """
+SELECT int_value, text_value, float_value, bool_value
+FROM settings
+WHERE key = %(key)s
+"""
+
+
+def get_setting(key: str) -> dict:
+    """Return a settings row as {int_value, text_value, float_value, bool_value}.
+
+    Callers should access the typed column they expect and fall back to
+    their own code default if the key doesn't exist or the column is NULL.
+    """
+    with connect() as conn, conn.cursor() as cur:
+        cur.execute(GET_SETTING, {"key": key})
+        row = cur.fetchone()
+    if row is None:
+        return {"int_value": None, "text_value": None, "float_value": None, "bool_value": None}
+    return dict(row)
