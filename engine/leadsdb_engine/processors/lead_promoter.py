@@ -57,15 +57,10 @@ class LeadPromoter(EnrichmentProcessor):
 
     def __init__(self) -> None:
         super().__init__("lead-promoter")
-        workspace_id = os.environ.get("LEADSDB_PROMOTE_WORKSPACE_ID")
-        if not workspace_id:
-            raise RuntimeError(
-                "LEADSDB_PROMOTE_WORKSPACE_ID is required. "
-                "Set it in Infisical under /leads-db and run with:\n"
-                "  infisical run --env dev --path /leads-db -- uv run python -m "
-                "leadsdb_engine.processors.lead_promoter"
-            )
-        self.workspace_id: str = workspace_id
+        self.workspace_id: str = os.environ.get(
+            "LEADSDB_PROMOTE_WORKSPACE_ID",
+            "main",
+        )
         self.threshold: float = _LLM_THRESHOLD
         self.interval: int = _POLL_INTERVAL
         self.batch: int = _BATCH_SIZE

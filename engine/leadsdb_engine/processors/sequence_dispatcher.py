@@ -80,12 +80,10 @@ DEFAULT_SEQUENCE: list[dict[str, str]] = [
 # Env configuration
 # ------------------------------------------------------------------
 
-WORKSPACE_ID = os.environ.get("LEADSDB_OUTREACH_WORKSPACE_ID")
-if not WORKSPACE_ID:
-    raise RuntimeError(
-        "LEADSDB_OUTREACH_WORKSPACE_ID is required. "
-        "Set it to the UUID of the workspace you want to run outreach for."
-    )
+WORKSPACE_ID = os.environ.get(
+    "LEADSDB_OUTREACH_WORKSPACE_ID",
+    "main",
+)
 
 INTERVAL_SECONDS = int(os.environ.get("LEADSDB_OUTREACH_INTERVAL", "300"))
 

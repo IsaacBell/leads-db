@@ -49,12 +49,24 @@ Leads-db justfile: `crm-*` (add/get/list/status/delete/social/deal/annotation), 
 | Secret | Required for |
 |---|---|
 | `LDB_DATABASE_URL` | All DB operations |
-| `LEADSDB_PROMOTE_WORKSPACE_ID` | Promoter (Stage 4) |
-| `LEADSDB_OUTREACH_WORKSPACE_ID` | Outreach (Stage 5) |
-| `RESEND_API_KEY` | Outreach email delivery |
-| `RESEND_FROM_ADDRESS` | Outreach sender (defaults to LeadsDB <outreach@leadsdb.news>) |
-| `ENTITY_SCORER_API_URL` / `ENTITY_SCORER_MODEL` / `ENTITY_SCORER_API_KEY` | LLM scoring |
-| `EXA_API_KEY` | Contact discovery (next) |
+All env vars have sensible defaults — none are required at import time.
+
+| Secret | Default | Notes |
+|---|---|---|
+| `LDB_DATABASE_URL` or `DATABASE_URL` | — | Required for any DB operation |
+| `LEADSDB_PROMOTE_WORKSPACE_ID` | `"main"` | Promoter workspace |
+| `LEADSDB_OUTREACH_WORKSPACE_ID` | `"main"` | Outreach workspace |
+| `ENTITY_SCORER_API_URL` | `http://localhost:11434/api/generate` | Ollama default |
+| `ENTITY_SCORER_MODEL` | `llama3.2` | |
+| `ENTITY_SCORER_OPENAI` | `false` | Set to `true` for OpenAI-compatible APIs |
+| `ENTITY_SCORER_API_KEY` | `""` | |
+| `ENTITY_SCORER_THRESHOLD` | `0.5` | Minimum score to promote |
+| `ENTITY_SCORER_MAX_SCORED` | `0` (unlimited) | Cap total scored domains |
+| `ENRICHER_BATCH_SIZE` | `50` | |
+| `ENRICHER_CONCURRENCY` | `10` | |
+| `ENRICHER_HTTP_TIMEOUT` | `10.0` | |
+| `ENRICHER_DNS_TIMEOUT` | `5.0` | |
+| `RESEND_API_KEY` | `""` (DRY-RUN) | If unset, outreach logs but doesn't send |
 
 ## Remaining Gaps
 
