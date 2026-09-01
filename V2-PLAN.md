@@ -1,7 +1,7 @@
 # LeadsDB V2 Plan
 
-**Date:** 2026-08-30  
-**Status:** Planning complete, ready to scaffold  
+**Date:** 2026-08-30
+**Status:** Planning complete, ready to scaffold
 **License:** MIT (ratifying the grant the README has made since 2024)
 
 ---

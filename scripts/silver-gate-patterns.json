@@ -66,6 +66,9 @@
     "pnpm-lock.yaml",
     "package-lock.json",
     "scripts/silver-gate-ai.mjs",
+    "scripts/guard-secrets.sh",
+    "scripts/silver-gate-patterns.json",
+    "scripts/silver-gate-repo.mjs",
     "*.sql",
     "*.lock",
     "*.log",
@@ -84,6 +87,8 @@
     "*.pdf",
     "*.sqlite",
     "*.db",
-    "myenv"
+    "*.postman_collection.json",
+    ".venv",
+    "__pycache__"
   ]
 }

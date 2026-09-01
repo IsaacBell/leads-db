@@ -168,12 +168,7 @@ fi
 # infisical folders, infisical list, infisical delete, infisical generate-example-env
 # ALL print or can print secret values. The ONLY safe interaction is `infisical run -- <cmd>`
 # which injects secrets into a subprocess without printing them.
-#
-# Exception: scripts/vercel-neon-to-infisical.sh is the approved one-time Neon credential
-# transfer script. It deliberately pipes all infisical secrets output to /dev/null.
-if printf '%s' "$lc" | grep -Fq 'vercel-neon-to-infisical'; then
-  : # explicitly allowed transfer script
-elif printf '%s' "$lc" | grep -Eq '\binfisical\b'; then
+if printf '%s' "$lc" | grep -Eq '\binfisical\b'; then
   if ! printf '%s' "$lc" | grep -Eq '\binfisical[[:space:]]+run\b'; then
     block "'infisical' commands other than 'infisical run' expose secret values. Use: infisical run -- <cmd>"
   fi
@@ -198,8 +193,7 @@ if printf '%s' "$lc" | grep -Eq '(cat|head|tail|less|more|bat|xxd|od|awk|sed|dd)
 fi
 
 # --- vercel env pull (writes secrets to disk) ---
-if printf '%s' "$lc" | grep -Eq '\bvercel[[:space:]]+env[[:space:]]+pull\b' \
-  && ! printf '%s' "$lc" | grep -Fq 'vercel-neon-to-infisical'; then
+if printf '%s' "$lc" | grep -Eq '\bvercel[[:space:]]+env[[:space:]]+pull\b'; then
   block "'vercel env pull' writes secret values to a file on disk."
 fi
 

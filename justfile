@@ -5,27 +5,35 @@ default:
 
 # --- hooks ---
 
+# Install pre-commit hook from scripts/pre-commit.
 install-hooks:
-    ln -sf ../../scripts/pre-commit .git/hooks/pre-commit
+    @ln -sf scripts/pre-commit .git/hooks/pre-commit
+    @echo "  ✓ pre-commit hook installed (scripts/pre-commit)"
 
 # --- guardrails ---
 
 enforce-pnpm:
     @bash scripts/guard-pnpm.sh < justfile
 
+# Run all local guardrails (agent + CI). All scripts live in scripts/ — self-contained.
 enforce-all: enforce-pnpm
     @bash scripts/guard-broad-find.sh ""
     @bash scripts/guard-temp-files.sh ""
     @bash scripts/guard-secrets.sh < /dev/null 2>/dev/null || true
+    @bash scripts/guard-whitespace.sh .
+    @bash scripts/scan-source-iocs.sh
+    @node scripts/silver-gate-repo.mjs --block-only --path . 2>/dev/null || echo "  ⚠ silver-gate blockers found (non-fatal)"
     @echo "  ✓ enforce-pnpm passed"
     @echo "  ✓ guard-broad-find passed"
     @echo "  ✓ guard-temp-files passed"
     @echo "  ✓ guard-secrets loaded"
+    @echo "  ✓ guard-whitespace clean"
+    @echo "  ✓ IOC scan clean"
 
 # --- silver-gate ---
 
 silver-gate:
-    node scripts/silver-gate-repo.mjs
+    node scripts/silver-gate-repo.mjs --path .
 
 silver-gate-staged:
     node scripts/silver-gate-repo.mjs --staged
@@ -138,7 +146,7 @@ exa-search query:
 exa-discover domain:
     uv run -m leadsdb_engine.exa discover-contacts {{domain}}
 
-# --- guardrails ---
+# --- secrets scanning ---
 
 # Scan a command string for secrets. Pipe mode: `echo "cat .env" | just check-secrets`; arg mode: `just check-secrets "cat .env"`.
 check-secrets cmd="":
@@ -162,6 +170,17 @@ guarded-cmd cmd:
     echo "{{cmd}}" | bash scripts/guard-secrets.sh && \
     printf 'running...\n' && \
     eval "{{cmd}}" | bash scripts/guard-secrets.sh --content-scan
+
+# Auto-fix trailing whitespace in all source files.
+guard-whitespace-fix:
+    @find . -type f \
+      \( -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.jsx' -o -name '*.mjs' -o -name '*.cjs' \
+         -o -name '*.json' -o -name '*.jsonc' -o -name '*.yaml' -o -name '*.yml' \
+         -o -name '*.md' -o -name '*.mdx' -o -name '*.sh' -o -name '*.bash' -o -name '*.zsh' \
+         -o -name '*.py' -o -name '*.css' -o -name '*.html' \) \
+      ! -path '*/node_modules/*' ! -path '*/.next/*' ! -path '*/.turbo/*' ! -path '*/__pycache__/*' \
+      -exec sed -i '' 's/[[:space:]]*$//' {} + 2>/dev/null || true
+    @echo "  ✓ trailing whitespace fixed"
 
 # --- CodeAnt ---
 
@@ -214,6 +233,25 @@ ci-bandit:
 
 ci-semgrep:
     semgrep --config=.semgrep.yml --error --strict 2>/dev/null || echo "  (semgrep warnings)"
+
+# IOC scan: detect obfuscation patterns (eval("global.o=", atob(), long config lines >1200 chars).
+# Semgrep can't express these patterns, so this is a dedicated ripgrep-based scan.
+ci-ioc:
+    @bash scripts/scan-source-iocs.sh
+    @echo "  ✓ IOC scan clean"
+
+# Silver-gate: PII + secret + reader-description pattern scan (blockers fail CI).
+# Semgrep's metavariable engine is unreliable for regex-heavy PII detection,
+# so silver-gate-repo.mjs handles this with a dedicated pattern file.
+ci-silver-gate:
+    @node scripts/silver-gate-repo.mjs --block-only --path .
+    @echo "  ✓ silver-gate block-only passed"
+
+# Whitespace integrity: reject trailing whitespace, invisible Unicode, and zero-width characters.
+# Critical for supply-chain security — prevents hidden malicious injection in .mjs, package.json, etc.
+ci-whitespace:
+    @bash scripts/guard-whitespace.sh . --fail-on-violation
+    @echo "  ✓ whitespace integrity check passed"
 
 ci-engine-test:
     cd engine && uv run pytest --junitxml=test-results.xml

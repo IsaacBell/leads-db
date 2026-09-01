@@ -8,15 +8,15 @@
 
 Scraping business directories is slow. Buying lists is expensive and full of stale data. Can we pull free data instead? Yes we can, by piggybacking on Certificate Transparency (CT) logs.
 
-Every time a company gets a certificate for their website, that certificate gets published to public record. That means every new website, every renewed website; all of them are listed. 
+Every time a company gets a certificate for their website, that certificate gets published to public record. That means every new website, every renewed website; all of them are listed.
 
-The idea sounds good. 
+The idea sounds good.
 
 What's the catch? Millions of new websites are created each day. That's a lot to sort through - too much for a human to process. Too much for a computer to process, without help. But with the right approach, we can make our machine do more with less.
 
 Let's build our system. Our inputs and outputs are:
 
-1. We take in web domains, for example, my-website.com. 
+1. We take in web domains, for example, my-website.com.
   a. For the domains that belong to real businesses, we want to add them to our business registry and do business research on them
 2. Our output is final list of businesses, with enhanced data
 
@@ -28,9 +28,9 @@ Before we create an entire app experience around this, let's do some exploration
 
 There are three questions to answer before making our solution:
 
-1. **Can we technically get that log data?** 
-2. **What is the data useful for?** 
-3. **Is it worth the time and effort?** 
+1. **Can we technically get that log data?**
+2. **What is the data useful for?**
+3. **Is it worth the time and effort?**
 
 
 
@@ -107,7 +107,7 @@ RFC 6962 requires logs to provide sufficient capacity for monitoring above the n
 
 ## Live-Fetching the New-Style Static CT API Logs
 
-Google's logs use the Static CT API, backed by GCS (Google Cloud Storage). Same goes for Let's Encrypt's, a well-known security company. 
+Google's logs use the Static CT API, backed by GCS (Google Cloud Storage). Same goes for Let's Encrypt's, a well-known security company.
 
 I'll check both of them to see what data they return.
 

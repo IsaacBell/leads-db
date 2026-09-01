@@ -1,6 +1,6 @@
 # LeadsDB V2 Status
 
-**Last updated:** 2026-08-31  
+**Last updated:** 2026-08-31
 **Phase:** Pipeline closed end-to-end (discovery → enrichment → scoring → CRM promotion → outreach)
 
 ---

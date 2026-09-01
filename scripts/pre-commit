@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Pre-commit: scan staged files for secrets, PII, internal framing, and reader descriptions.
-# Patterns live in docs/office-ops/scripts/silver-gate-patterns.json.
+# This is the CANONICAL source; the copy at docs/office-ops/ is stale.
+# Patterns live in scripts/silver-gate-patterns.json.
 # Usage: `just install-hooks` links this to .git/hooks/pre-commit.
 set -euo pipefail
 

@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: read
+
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -134,6 +139,53 @@ jobs:
           config: .semgrep.yml p/owasp-top-ten p/python p/typescript p/react
         env:
           SEMGREP_TIMEOUT: 120
+
+  ioc:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/leads-db
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install just
+        uses: extractions/setup-just@v2
+
+      - name: IOC scan (obfuscation patterns semgrep can't catch)
+        run: just ci-ioc
+
+  silver-gate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/leads-db
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install just
+        uses: extractions/setup-just@v2
+
+      - name: Silver-gate PII/secret/reader-description scan
+        run: just ci-silver-gate
+
+  whitespace-integrity:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/leads-db
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install just
+        uses: extractions/setup-just@v2
+
+      - name: Whitespace integrity (trailing whitespace, invisible Unicode, homoglyphs)
+        run: just ci-whitespace
+
+  # ──────────────────────────────────────────────
+  # SCA + secrets — run on every push/PR to main
+  # (formerly a weekly scheduled job in security.yml)
+  # ──────────────────────────────────────────────
 
   audit:
     runs-on: ubuntu-latest
