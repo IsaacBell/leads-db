@@ -1,7 +1,5 @@
 /**
- * SQL queries for the settings table, ported from engine/leadsdb_engine/db.py.
- *
- * These use `$1`, `$2`, ... parameterized placeholders (pg driver convention).
+ * SQL queries for the settings table
  */
 
 export const GET_SETTING = `

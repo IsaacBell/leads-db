@@ -189,7 +189,10 @@ codeant:
 codeant-secrets:
     codeant secrets --last-commit
 
-# --- Vercel deploy ---
+# --- Vercel ---
+
+vercel-env-to-infisical:
+    bash scripts/vercel-neon-to-infisical.sh
 
 # Build the Next.js frontend.
 build:
@@ -255,3 +258,57 @@ ci-engine-test:
 
 ci-js-test:
     pnpm vitest run --reporter=junit --outputFile=test-results-js.xml 2>/dev/null || echo "  (js tests failed, check output)"
+
+
+# ------------ Infisical ------------ #
+
+# Run any command with leads-db secrets injected via Infisical.
+# Usage: `just leadsdb-run uv run python -m leadsdb_engine.processors.certstream_ingestor`
+leadsdb-run cmd:
+    infisical run --env dev --path /leads-db -- {{cmd}}
+
+# Stage 1: Ingest raw domains from certstream WebSocket.
+ingest:
+		infisical run --env dev --path /leads-db -- uv run python -m leadsdb_engine.processors.certstream_ingestor
+
+# Stage 2: Enrich raw domains with DNS/HTTP/rule-based classification.
+enrich:
+		infisical run --env dev --path /leads-db -- uv run python -m leadsdb_engine.processors.domain_enricher
+
+# Stage 3: Score promising domains with an LLM for business entity detection.
+leadsdb-score:
+    infisical run --env dev --path /leads-db -- uv run python -m leadsdb_engine.processors.entity_scorer
+
+# Stage 4: Promote scored domains into CRM companies.
+leadsdb-promote:
+    infisical run --env dev --path /leads-db -- uv run python -m leadsdb_engine.processors.lead_promoter
+
+# Stage 5: Dispatch sequence outreach for promoted companies.
+leadsdb-outreach:
+    infisical run --env dev --path /leads-db -- uv run python -m leadsdb_engine.processors.sequence_dispatcher
+
+# ------------ Engine ------------ #
+
+# Install the Python engine dependencies.
+leadsdb-install:
+    cd engine && uv sync
+
+# Apply migrations to the leads-db Neon database.
+leadsdb-migrate:
+    infisical run --env dev --path /leads-db -- bash apps/leads-db/scripts/migrate.sh
+
+# Reset the leads-db database and re-run all migrations.
+leadsdb-reset:
+    infisical run --env dev --path /leads-db -- bash apps/leads-db/scripts/reset.sh
+
+# Seed sample domain events and classifications (no consumer needed).
+leadsdb-seed:
+    cd engine && infisical run --env dev --path /leads-db -- uv run python scripts/seed.py
+
+# Deploy the leads-db Next.js frontend + API to Vercel production.
+leadsdb-deploy:
+    pnpm build && vercel deploy --prod
+
+# Quick smoke test: verify DB connectivity and table count.
+leadsdb-check:
+    cd engine && infisical run --env dev --path /leads-db -- uv run python -c 'import os, psycopg; conn = psycopg.connect(os.environ["LDB_DATABASE_URL"]); cur = conn.cursor(); cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = %s", ("public",)); print("Tables:", [r[0] for r in cur.fetchall()]); cur.execute("SELECT COUNT(*) FROM domain_events"); print("Domain events:", cur.fetchone()[0]); cur.execute("SELECT COUNT(*) FROM domain_classifications"); print("Classifications:", cur.fetchone()[0])'

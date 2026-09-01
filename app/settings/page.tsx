@@ -158,43 +158,6 @@ export default function SettingsPage() {
 
   const categoryOrder = ["scorer", "enricher", "promoter", "outreach"];
 
-  if (!adminToken) {
-    return (
-      <>
-        <SettingsHeader />
-        <div className="shell">
-          <div className="notice">
-            Settings require an admin token. Save it in your browser so you don't
-            have to enter it every time.
-          </div>
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            <input
-              type="text"
-              placeholder="Enter admin token..."
-              value={adminToken}
-              onChange={(e) => {
-                const v = e.target.value;
-                setAdminToken(v);
-                localStorage.setItem("leadsdb_admin_token", v);
-              }}
-              style={{
-                flex: 1,
-                maxWidth: 360,
-                padding: "8px 10px",
-                border: "1px solid var(--line)",
-                font: "13px monospace",
-                background: "var(--white)",
-              }}
-            />
-            <button className="btn" onClick={() => fetchSettings()} disabled={!adminToken}>
-              Connect
-            </button>
-          </div>
-        </div>
-      </>
-    );
-  }
-
   return (
     <>
       <SettingsHeader />

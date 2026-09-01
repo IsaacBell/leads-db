@@ -3,13 +3,6 @@ import crypto from "node:crypto";
 /**
  * AES-256-GCM encryption for secret settings values.
  *
- * LeadsDB stores user-supplied keys (BYOK: model inference API keys, outreach
- * delivery keys, etc.) encrypted at rest in the `settings` table, never as plain
- * text and never in environment variables.
- *
- * The single secret that lives outside the database is the master key
- * (`LDB_SETTINGS_ENCRYPTION_KEY`): a urlsafe-base64-encoded 32-byte key.
- * Without it, secret settings cannot be written.
  *
  * Ciphertext layout: `nonce(12 bytes) || ciphertext+tag` (AES-GCM, 256-bit key).
  *
@@ -33,10 +26,10 @@ export class CryptoError extends Error {
 }
 
 /**
- * Return the 32-byte master key, or null if the env var is unset.
- * Raises CryptoError if the env var is present but malformed.
+ * Return the 32-byte master key, or null if no env var
+ * Raise CryptoError if the env var is malformed.
  */
-function masterKey(): Buffer | null {
+const masterKey = (): Buffer | null => {
   const raw = process.env[MASTER_KEY_ENV];
   if (!raw) return null;
 
@@ -60,9 +53,9 @@ function masterKey(): Buffer | null {
 }
 
 /**
- * True when a usable master key is present (never throws).
+ * Is a usable master key present?
  */
-export function isAvailable(): boolean {
+export const isAvailable = (): boolean => {
   try {
     return masterKey() !== null;
   } catch {
@@ -135,5 +128,3 @@ export function decrypt(token: Buffer): string {
     );
   }
 }
-
-

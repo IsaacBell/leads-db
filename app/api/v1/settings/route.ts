@@ -13,11 +13,11 @@ export const dynamic = "force-dynamic";
 
 const ADMIN_TOKEN_ENV = "LEADSDB_ADMIN_TOKEN";
 
-function checkAdmin(request: NextRequest): NextResponse | null {
-  const token = request.headers.get("x-admin-token") || request.cookies.get("admin_token")?.value;
+const checkAdmin = (request: NextRequest): NextResponse | null => {
+  const token = request.headers.get("x-admin-token") ?? request.cookies.get("admin_token")?.value;
   const expected = process.env[ADMIN_TOKEN_ENV];
   if (!expected) {
-    // No admin token configured — allow in dev, warn via return
+    // No admin token — allow in dev
     return null;
   }
   if (!token || token !== expected) {
@@ -28,7 +28,7 @@ function checkAdmin(request: NextRequest): NextResponse | null {
 
 // ---- Helpers ----
 
-function maskSecret(value: string | null): string | null {
+const maskSecret = (value: string | null): string | null => {
   if (!value) return null;
   if (value.length <= 12) return "****";
   return `${value.slice(0, 4)}...${value.slice(-4)}`;
@@ -38,7 +38,7 @@ function maskSecret(value: string | null): string | null {
  * Normalize a settings row into a response object.
  * Secret values are masked unless explicitly revealed.
  */
-function rowToSetting(row: Record<string, unknown>, reveal = false): Record<string, unknown> {
+const rowToSetting = (row: Record<string, unknown>, reveal = false): Record<string, unknown> => {
   const out: Record<string, unknown> = {
     key: row.key,
     int_value: row.int_value ?? null,
@@ -72,12 +72,12 @@ function rowToSetting(row: Record<string, unknown>, reveal = false): Record<stri
   return out;
 }
 
-function inferTypedValue(value: unknown): {
+const inferTypedValue = (value: unknown): {
   int_value: number | null;
   float_value: number | null;
   text_value: string | null;
   bool_value: boolean | null;
-} {
+} => {
   let int_value: number | null = null;
   let float_value: number | null = null;
   let text_value: string | null = null;
@@ -142,51 +142,6 @@ export async function GET(request: NextRequest) {
     console.error("Settings GET failed:", error);
     return NextResponse.json(
       { error: "Failed to fetch settings" },
-      { status: 500 },
-    );
-  }
-}
-
-/**
- * POST /api/v1/settings — set a plain (non-secret) setting.
- *
- * Body: { key: string, value: string|number|boolean, label?, description?, category? }
- *
- * Infers the typed column from the value shape.
- */
-export async function POST(request: NextRequest) {
-  const authErr = checkAdmin(request);
-  if (authErr) return authErr;
-
-  try {
-    const body = await request.json();
-    const { key, value, label, description, category } = body;
-
-    if (!key || value === undefined) {
-      return NextResponse.json(
-        { error: "key and value are required" },
-        { status: 400 },
-      );
-    }
-
-    const typed = inferTypedValue(value);
-
-    await pool.query(UPSERT_SETTING, [
-      key,
-      typed.int_value,
-      typed.text_value,
-      typed.float_value,
-      typed.bool_value,
-      label ?? null,
-      description ?? null,
-      category ?? null,
-    ]);
-
-    return NextResponse.json({ success: true, key });
-  } catch (error) {
-    console.error("Settings POST failed:", error);
-    return NextResponse.json(
-      { error: "Failed to set setting" },
       { status: 500 },
     );
   }
