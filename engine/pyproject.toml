@@ -1,7 +1,7 @@
 [project]
 name = "leadsdb-engine"
 version = "0.1.0"
-description = "LeadsDB V2 — certstream consumer, DNS/HTTP classifier, LLM gate, Neon Postgres"
+description = "LeadsDB V2"
 requires-python = ">=3.12"
 dependencies = [
     "websocket-client>=1.8",

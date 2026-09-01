@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
-"""Seed sample domain events and classifications for LeadsDB V2.
-
-Populates a handful of realistic-looking domain events so the API returns
-results without running the certstream consumer live.
+"""
+Seed DB with fake data.
 
 Usage:
     infisical run --env dev --path /leads-db -- uv run python scripts/seed.py
@@ -123,7 +121,6 @@ def main() -> None:
     with connect() as conn:
         with conn.cursor() as cur:
             for entry in SAMPLE_DOMAINS:
-                # Insert domain event
                 cur.execute(
                     INSERT_DOMAIN_EVENT,
                     {
@@ -140,7 +137,6 @@ def main() -> None:
                 )
                 domain_event_id = cur.fetchone()["id"]
 
-                # Insert classification
                 cur.execute(
                     INSERT_CLASSIFICATION,
                     {
