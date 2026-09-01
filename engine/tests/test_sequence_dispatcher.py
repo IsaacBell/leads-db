@@ -1,23 +1,18 @@
 """Tests for the sequence dispatcher — no DB, no network.
 
 Covers the SQL guard string (text assertions), default sequence shape,
-DRY-RUN detection, and the pure dispatchability guard.
+transport selection, and the pure dispatchability guard.
 """
 
 from __future__ import annotations
 
-import os
-
-os.environ.setdefault("LEADSDB_OUTREACH_WORKSPACE_ID", "00000000-0000-0000-0000-000000000000")
-os.environ.setdefault("LEADSDB_PROMOTE_WORKSPACE_ID", "00000000-0000-0000-0000-000000000000")
-
 from leadsdb_engine.processors.sequence_dispatcher import (
     DEFAULT_SEQUENCE,
     GET_OUTREACHABLE_CONTACTS,
-    SEQUENCE,
+    _parse_sequence,
     is_dispatchable,
-    is_dry_run,
 )
+from leadsdb_engine.transports import NoopTransport, get_transport
 
 
 class TestGetOutreachableContactsGuard:
@@ -60,29 +55,56 @@ class TestDefaultSequence:
             assert isinstance(step["subject"], str)
             assert isinstance(step["body_template"], str)
 
-    def test_sevenimport_sequence_alias(self) -> None:
-        """SEQUENCE module-level constant is set (may be env-overridden)."""
-        assert isinstance(SEQUENCE, list)
-        assert all("subject" in s and "body_template" in s for s in SEQUENCE)
+
+class TestParseSequence:
+    """_parse_sequence handles None, invalid JSON, and well-formed arrays."""
+
+    def test_none_returns_default(self) -> None:
+        assert _parse_sequence(None) is DEFAULT_SEQUENCE
+
+    def test_empty_string_returns_default(self) -> None:
+        assert _parse_sequence("") is DEFAULT_SEQUENCE
+
+    def test_invalid_json_returns_default(self) -> None:
+        assert _parse_sequence("not json") is DEFAULT_SEQUENCE
+
+    def test_empty_array_returns_default(self) -> None:
+        assert _parse_sequence("[]") is DEFAULT_SEQUENCE
+
+    def test_valid_array_parsed(self) -> None:
+        custom = '[{"subject": "Hi", "body_template": "Hello {name}"}]'
+        result = _parse_sequence(custom)
+        assert len(result) == 1
+        assert result[0]["subject"] == "Hi"
 
 
-class TestDryRunDetection:
-    """DRY-RUN mode activates when RESEND_API_KEY is absent."""
+class TestNoopTransportDefault:
+    """The default transport is noop — no live sends without explicit config."""
 
-    def test_dry_run_when_key_unset(self) -> None:
-        saved = os.environ.pop("RESEND_API_KEY", None)
+    def test_noop_is_dry_run(self) -> None:
+        transport = get_transport("noop", api_key=None, from_addr=None)
+        assert transport.name == "noop"
+        assert transport.is_dry_run is True
+
+    def test_noop_send_returns_dry_run_status(self) -> None:
+        transport = NoopTransport(api_key=None, from_addr=None)
+        result = transport.send(to="test@example.com", subject="s", text="t")
+        assert result.status == "dry_run"
+        assert result.message_id is None
+
+    def test_resend_without_key_self_reports_dry_run(self) -> None:
+        """ResendTransport.is_dry_run is True when no key is set (safe default)."""
+        from leadsdb_engine.transports.resend import ResendTransport
+        t = ResendTransport(api_key=None, from_addr=None)
+        assert t.is_dry_run is True
+
+    def test_unknown_transport_raises(self) -> None:
+        from leadsdb_engine.transports import get_transport, TransportError
         try:
-            assert is_dry_run() is True
-        finally:
-            if saved is not None:
-                os.environ["RESEND_API_KEY"] = saved
-
-    def test_not_dry_run_when_key_set(self) -> None:
-        os.environ["RESEND_API_KEY"] = "re_123"
-        try:
-            assert is_dry_run() is False
-        finally:
-            del os.environ["RESEND_API_KEY"]
+            get_transport("nonexistent", api_key=None, from_addr=None)
+            assert False, "should have raised"
+        except TransportError:
+            pass
 
 
 class TestIsDispatchable:

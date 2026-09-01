@@ -4,21 +4,30 @@ Reads from domain_classifications (no workspace_id — single-tenant discovery
 pipeline) and creates companies + annotations in the CRM (multi-tenant, with
 workspace_id). The bridge between the CT-log pipeline and the CRM.
 
-Environment:
-    LEADSDB_PROMOTE_WORKSPACE_ID  — target workspace for CRM records (required)
-    ENTITY_SCORER_THRESHOLD        — minimum llm_score to promote (default 0.5)
-    LEADSDB_PROMOTE_INTERVAL       — poll interval in seconds (default 120)
-    LEADSDB_PROMOTE_BATCH          — rows per batch (default 25)
+Configuration is read from the `settings` table at the start of each cycle —
+never from env vars:
+    scorer_threshold        (category scorer)   minimum llm_score to promote
+    promoter_interval       (category promoter) poll interval (seconds)
+    promoter_batch          (category promoter) rows per batch
+    promoter_workspace_id   (category promoter) target CRM workspace
 """
 
-import os
 import time
 from typing import Any
 
 from psycopg.types.json import Jsonb
 
-from leadsdb_engine.db import INSERT_ANNOTATION, INSERT_COMPANY, connect
+from leadsdb_engine.db import INSERT_ANNOTATION, INSERT_COMPANY, connect, get_settings_map
 from leadsdb_engine.processors.base import EnrichmentProcessor
+
+# ------------------------------------------------------------------
+# Code-level fallbacks. Overridden each cycle by the settings table.
+# ------------------------------------------------------------------
+
+LLM_THRESHOLD = 0.5
+PROMOTE_INTERVAL = 120
+PROMOTE_BATCH = 25
+DEFAULT_WORKSPACE_ID = "main"
 
 # ------------------------------------------------------------------
 # Local SQL
@@ -43,27 +52,41 @@ SET promoted_company_id = %(company_id)s
 WHERE id = %(dc_id)s
 """
 
-# ------------------------------------------------------------------
-# Env configuration (lazy — checked on instantiation, not at import)
-# ------------------------------------------------------------------
-
-_LLM_THRESHOLD = float(os.environ.get("ENTITY_SCORER_THRESHOLD", "0.5"))
-_POLL_INTERVAL = int(os.environ.get("LEADSDB_PROMOTE_INTERVAL", "120"))
-_BATCH_SIZE = int(os.environ.get("LEADSDB_PROMOTE_BATCH", "25"))
-
 
 class LeadPromoter(EnrichmentProcessor):
     """Promotes scored domains into CRM companies + annotations."""
 
     def __init__(self) -> None:
         super().__init__("lead-promoter")
-        self.workspace_id: str = os.environ.get(
-            "LEADSDB_PROMOTE_WORKSPACE_ID",
-            "main",
-        )
-        self.threshold: float = _LLM_THRESHOLD
-        self.interval: int = _POLL_INTERVAL
-        self.batch: int = _BATCH_SIZE
+
+    # ------------------------------------------------------------------
+    # Configuration
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _load_config() -> dict[str, Any]:
+        """Read tune + selection config from the settings table.
+
+        Promotion threshold pulls from the `scorer` category (scorer_threshold)
+        so promotion agrees with what the scorer scored against — one source of
+        truth for lead quality. Promoter-specific tuning comes from the
+        `promoter` category.
+        """
+        scorer = get_settings_map("scorer")
+        promoter = get_settings_map("promoter")
+        return {
+            "threshold": float(
+                (scorer.get("scorer_threshold") or {}).get("float_value") or LLM_THRESHOLD
+            ),
+            "interval": int(
+                (promoter.get("promoter_interval") or {}).get("int_value") or PROMOTE_INTERVAL
+            ),
+            "batch": int(
+                (promoter.get("promoter_batch") or {}).get("int_value") or PROMOTE_BATCH
+            ),
+            "workspace_id": (promoter.get("promoter_workspace_id") or {}).get("text_value")
+            or DEFAULT_WORKSPACE_ID,
+        }
 
     # ------------------------------------------------------------------
     # Per-row logic
@@ -78,7 +101,7 @@ class LeadPromoter(EnrichmentProcessor):
                 return cleaned
         return registrable_domain
 
-    def _promote_row(self, row: dict[str, Any]) -> None:
+    def _promote_row(self, row: dict[str, Any], workspace_id: str) -> None:
         """Insert CRM company + annotation, then mark as promoted."""
         dc_id = row["id"]
         domain_event_id = row["domain_event_id"]
@@ -94,7 +117,7 @@ class LeadPromoter(EnrichmentProcessor):
             cur.execute(
                 INSERT_COMPANY,
                 {
-                    "workspace_id": self.workspace_id,
+                    "workspace_id": workspace_id,
                     "name": company_name,
                     "domain": registrable_domain,
                     "description": None,
@@ -107,7 +130,7 @@ class LeadPromoter(EnrichmentProcessor):
             cur.execute(
                 INSERT_ANNOTATION,
                 {
-                    "workspace_id": self.workspace_id,
+                    "workspace_id": workspace_id,
                     "target_type": "domain_event",
                     "target_id": domain_event_id,
                     "source": "llm",
@@ -137,42 +160,50 @@ class LeadPromoter(EnrichmentProcessor):
 
     def _loop(self) -> None:
         """Poll for promotable domains and promote them."""
+        config = self._load_config()
         self.logger.info(
             "lead promoter started",
-            workspace_id=self.workspace_id,
-            threshold=self.threshold,
-            interval=self.interval,
-            batch=self.batch,
+            workspace_id=config["workspace_id"],
+            threshold=config["threshold"],
+            interval=config["interval"],
+            batch=config["batch"],
         )
 
         while not self._shutdown_requested:
             try:
+                # Re-read config each cycle so admin-panel changes apply live.
+                config = self._load_config()
+                threshold = config["threshold"]
+                batch = config["batch"]
+                workspace_id = config["workspace_id"]
+
                 with connect() as conn, conn.cursor() as cur:
                     cur.execute(
                         GET_PROMOTABLE_DOMAINS,
                         {
-                            "threshold": self.threshold,
-                            "batch": self.batch,
+                            "threshold": threshold,
+                            "batch": batch,
                         },
                     )
                     rows = cur.fetchall()
 
                 if not rows:
                     self.logger.info(
-                        "no promotable domains, sleeping %ds", self.interval
+                        "no promotable domains, sleeping %ds", config["interval"]
                     )
-                    time.sleep(self.interval)
+                    time.sleep(config["interval"])
                     continue
 
                 self.logger.info(
                     "promoting batch",
                     count=len(rows),
+                    workspace_id=workspace_id,
                     domains=[r["registrable_domain"] for r in rows[:5]],
                 )
 
                 for row in rows:
                     try:
-                        self._promote_row(row)
+                        self._promote_row(row, workspace_id)
                         self.logger.info(
                             "promoted",
                             domain=row["registrable_domain"],

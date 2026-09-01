@@ -7,8 +7,9 @@ startup, signal handling, and logging setup.
 
 import abc
 import signal
-import structlog
 import sys
+
+import structlog
 
 from leadsdb_engine.db import connect
 

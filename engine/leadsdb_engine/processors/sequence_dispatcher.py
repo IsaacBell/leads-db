@@ -1,24 +1,25 @@
 """SequenceDispatcher — NATIVE outreach sequence engine for LeadsDB.
 
-Replaces the older external-tool sketch with an in-repo processor that reuses
-the CRM schema (contacts/deals/annotations from migration 005) and keeps PII
-inside the masked CRM layer.  The CRM's contact_type='lead' + status fields
+Reuses the CRM schema (contacts/deals/annotations from migration 005) and keeps
+PII inside the masked CRM layer. The CRM's contact_type='lead' + status fields
 serve as the outreach state machine.
 
 Design decisions
 ----------------
-* **Sync loop, blocking sleep.**  The dispatcher is I/O-bound on a single
-  HTTP POST per cycle; async would add complexity for no throughput gain here.
-* **Resend for delivery.**  Mirrors the existing pattern in
-  apps/keyword-report/resend_client.py: POST to https://api.resend.com/emails
-  with RESEND_API_KEY.  Simple, no queuing infrastructure.
-* **DRY-RUN mode.**  When RESEND_API_KEY is absent the dispatcher logs what it
-  *would* send and writes outreach_logs with status='failed' — no email is
-  dispatched.  Useful for staging or testing the cycle without burning quota.
-* **Hard unsubscribed guard.**  No code path ever sends email to a contact
-  whose status is 'unsubscribed'.  The SELECT excludes them and a runtime
+* **Sync loop, blocking sleep.** The dispatcher is I/O-bound on a single send
+  per cycle; async would add complexity for no throughput gain here.
+* **Vendor-agnostic transport.** Delivery is delegated to an EmailTransport
+  adapter (``transports/`` package) selected via the ``outreach_transport``
+  setting row. ``noop`` is the default (log-only / DRY-RUN); the Resend
+  adapter is available for live testing. No delivery vendor is baked in.
+* **All config in the settings table.** Workspace, interval, from-address,
+  sequence, transport, and the (encrypted) transport API key are read there
+  at the start of each cycle — never from env vars, never hardcoded.
+* **Hard unsubscribed guard.** No code path ever sends email to a contact
+  whose status is 'unsubscribed'. The SELECT excludes them and a runtime
   assert double-checks.
-* **Multi-tenant.**  Operates on a single workspace_id set via env var.
+* **Multi-tenant.** Operates on a single workspace_id set via the settings
+  table (``outreach_workspace_id``).
 
 PII guard: we never log the `to` address or the full email body at info level.
 Only masked success/failure and message_id are recorded in logs.
@@ -27,20 +28,21 @@ Only masked success/failure and message_id are recorded in logs.
 from __future__ import annotations
 
 import json
-import os
 import time
+from typing import Any
 
-from leadsdb_engine.db import connect
+from leadsdb_engine.db import connect, get_settings_map
 from leadsdb_engine.processors.base import EnrichmentProcessor
-from leadsdb_engine.resend import ResendError, send_email
+from leadsdb_engine.transports import EmailTransport, TransportError, get_transport
 
 # ------------------------------------------------------------------
 # Default outreach sequence (3 steps)
 # ------------------------------------------------------------------
 # Each step is a dict with "subject" and "body_template" keys.
 # body_template uses {name} and {company_name} placeholders, rendered
-# via str.format().  Override the whole sequence with the
-# SEQUENCE_STEPS_JSON env var (a JSON array of the same shape).
+# via str.format(). Override the whole sequence with the
+# outreach_sequence setting (a JSON array of the same shape); NULL/seeding
+# leaves the built-in default in place.
 
 DEFAULT_SEQUENCE: list[dict[str, str]] = [
     {
@@ -76,27 +78,8 @@ DEFAULT_SEQUENCE: list[dict[str, str]] = [
     },
 ]
 
-# ------------------------------------------------------------------
-# Env configuration
-# ------------------------------------------------------------------
-
-WORKSPACE_ID = os.environ.get(
-    "LEADSDB_OUTREACH_WORKSPACE_ID",
-    "main",
-)
-
-INTERVAL_SECONDS = int(os.environ.get("LEADSDB_OUTREACH_INTERVAL", "300"))
-
-_sequence_json = os.environ.get("SEQUENCE_STEPS_JSON")
-SEQUENCE: list[dict[str, str]] = (
-    json.loads(_sequence_json) if _sequence_json else DEFAULT_SEQUENCE
-)
-
-
-def is_dry_run() -> bool:
-    """Return True when RESEND_API_KEY is unset (DRY-RUN mode)."""
-    return not os.environ.get("RESEND_API_KEY")
-
+DEFAULT_INTERVAL_SECONDS = 300
+DEFAULT_WORKSPACE_ID = "main"
 
 # ------------------------------------------------------------------
 # SQL constants
@@ -165,26 +148,70 @@ def is_dispatchable(status: str, contact_type: str) -> bool:
     return contact_type == "lead"
 
 
-# ------------------------------------------------------------------
-# Dispatcher implementation
-# ------------------------------------------------------------------
+def _parse_sequence(raw: str | None) -> list[dict[str, str]]:
+    """Parse the outreach_sequence setting (JSON array) or fall back to default."""
+    if not raw:
+        return DEFAULT_SEQUENCE
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        return DEFAULT_SEQUENCE
+    if not isinstance(parsed, list) or not parsed:
+        return DEFAULT_SEQUENCE
+    cleaned = [
+        s for s in parsed
+        if isinstance(s, dict) and "subject" in s and "body_template" in s
+    ]
+    return cleaned or DEFAULT_SEQUENCE
 
 
 class SequenceDispatcher(EnrichmentProcessor):
-    """Dispatch outreach emails through a multi-step sequence.
+    """Dispatch outreach emails through a multi-step, vendor-agnostic sequence.
 
     Each cycle:
-      1. SELECT contacts that are reachable (lead, not unsubscribed, no recent
+      1. Load outreach config from the settings table (workspace, interval,
+         from-address, sequence, transport name + encrypted api key).
+      2. SELECT contacts that are reachable (lead, not unsubscribed, no recent
          log entry, not soft-deleted).
-      2. Determine each contact's next step from past outreach_logs.
-      3. Render the step's subject/body with the contact's name and company.
-      4. Send via Resend (or log in DRY-RUN mode).
-      5. Record the result in outreach_logs and update contact status.
+      3. Determine each contact's next step from past outreach_logs.
+      4. Render the step's subject/body with the contact's name and company.
+      5. Send via the selected transport (noop logs only).
+      6. Record the result in outreach_logs and update contact status.
     """
 
-    def __init__(self) -> None:
-        super().__init__("sequence-dispatcher")
-        self._dry_run = is_dry_run()
+    # ------------------------------------------------------------------
+    # Configuration
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _load_config() -> dict[str, Any]:
+        """Read the `outreach` settings category, falling back to code defaults."""
+        cfg = get_settings_map("outreach")
+
+        def typed(k, col, default):
+            return (cfg.get(k) or {}).get(col) or default
+
+        transport_name = (cfg.get("outreach_transport") or {}).get("text_value") or "noop"
+        api_key_row = cfg.get("outreach_api_key") or {}
+        secret = api_key_row.get("secret_value")  # decrypted plaintext or None
+
+        return {
+            "workspace_id": (cfg.get("outreach_workspace_id") or {}).get("text_value")
+            or DEFAULT_WORKSPACE_ID,
+            "interval": int(typed("outreach_interval", "int_value", DEFAULT_INTERVAL_SECONDS)),
+            "sequence": _parse_sequence((cfg.get("outreach_sequence") or {}).get("text_value")),
+            "transport": transport_name,
+            "api_key": secret,
+            "from_addr": (cfg.get("outreach_from_address") or {}).get("text_value") or "",
+        }
+
+    def _build_transport(self, config: dict[str, Any]) -> EmailTransport:
+        """Instantiate the transport named in config, with resolved creds."""
+        return get_transport(
+            config["transport"],
+            api_key=config.get("api_key"),
+            from_addr=config.get("from_addr"),
+        )
 
     # ------------------------------------------------------------------
     # Per-contact dispatch
@@ -193,8 +220,8 @@ class SequenceDispatcher(EnrichmentProcessor):
     def _get_next_step(self, contact_id: int) -> int:
         """Return the next step number (1-based) for a contact.
 
-        Counts existing non-deleted outreach_logs and adds 1.  If the result
-        exceeds len(SEQUENCE) the contact's sequence is complete.
+        Counts existing non-deleted outreach_logs and adds 1. If the result
+        exceeds len(sequence) the contact's sequence is complete.
         """
         with connect() as conn, conn.cursor() as cur:
             cur.execute(CONTACT_LOG_COUNT, {"contact_id": contact_id})
@@ -205,13 +232,12 @@ class SequenceDispatcher(EnrichmentProcessor):
         self,
         contact: dict,
         step_num: int,
+        sequence: list[dict[str, str]],
+        transport: EmailTransport,
+        workspace_id: str,
     ) -> None:
-        """Send (or DRY-RUN log) step *step_num* of the sequence for *contact*.
-
-        This method is intentionally long-ish so the caller loop stays flat
-        and easy to reason about — one contact, one step, one SQL log write.
-        """
-        step = SEQUENCE[step_num - 1]
+        """Send (or DRY-RUN log) step *step_num* of the sequence for *contact*."""
+        step = sequence[step_num - 1]
         name = contact.get("name") or "there"
         company = contact.get("company_name") or "your team"
 
@@ -227,29 +253,25 @@ class SequenceDispatcher(EnrichmentProcessor):
         message_id: str | None = None
         status: str
 
-        if self._dry_run:
+        if transport.is_dry_run:
             self.logger.info(
                 "DRY-RUN: would send email",
                 contact_id=contact["id"],
                 step=step_num,
                 subject=subject,
             )
-            message_id = None
-            status = "failed"
+            status = "dry_run"
         else:
             try:
-                message_id = send_email(
-                    to=contact["email"],
-                    subject=subject,
-                    text=body,
-                )
-                status = "sent"
+                result = transport.send(to=contact["email"], subject=subject, text=body)
+                message_id = result.message_id
+                status = result.status
                 self.logger.info(
                     "email sent",
-                    message_id=message_id,
                     step=step_num,
+                    message_id=message_id,
                 )
-            except (ResendError, RuntimeError) as exc:
+            except TransportError as exc:
                 self.logger.warning(
                     "email send failed",
                     contact_id=contact["id"],
@@ -262,7 +284,7 @@ class SequenceDispatcher(EnrichmentProcessor):
             cur.execute(
                 INSERT_OUTREACH_LOG,
                 {
-                    "workspace_id": WORKSPACE_ID,
+                    "workspace_id": workspace_id,
                     "contact_id": contact["id"],
                     "step_sent": step_num,
                     "message_id": message_id,
@@ -281,17 +303,22 @@ class SequenceDispatcher(EnrichmentProcessor):
     # ------------------------------------------------------------------
 
     def _cycle(self) -> None:
-        """Run one outreach cycle: fetch, dispatch, sleep."""
+        """Run one outreach cycle: load config, fetch, dispatch, sleep."""
+        config = self._load_config()
+        transport = self._build_transport(config)
+        workspace_id = config["workspace_id"]
+
         self.logger.info(
             "outreach cycle starting",
-            workspace_id=WORKSPACE_ID,
-            dry_run=self._dry_run,
+            workspace_id=workspace_id,
+            transport=transport.name,
+            dry_run=transport.is_dry_run,
         )
 
         with connect() as conn, conn.cursor() as cur:
             cur.execute(
                 GET_OUTREACHABLE_CONTACTS,
-                {"workspace_id": WORKSPACE_ID, "limit": 50},
+                {"workspace_id": workspace_id, "limit": 50},
             )
             contacts = cur.fetchall()
 
@@ -306,14 +333,14 @@ class SequenceDispatcher(EnrichmentProcessor):
                 break
 
             next_step = self._get_next_step(contact["id"])
-            if next_step > len(SEQUENCE):
+            if next_step > len(config["sequence"]):
                 self.logger.info(
                     "sequence complete, skipping",
                     contact_id=contact["id"],
                 )
                 continue
 
-            self._dispatch_one(contact, next_step)
+            self._dispatch_one(contact, next_step, config["sequence"], transport, workspace_id)
 
     # ------------------------------------------------------------------
     # Loop
@@ -321,11 +348,11 @@ class SequenceDispatcher(EnrichmentProcessor):
 
     def run(self) -> None:
         """Run the outreach loop until a shutdown signal is received."""
+        config = self._load_config()
         self.logger.info(
             "sequence dispatcher started",
-            dry_run=self._dry_run,
-            interval_seconds=INTERVAL_SECONDS,
-            sequence_steps=len(SEQUENCE),
+            interval_seconds=config["interval"],
+            sequence_steps=len(config["sequence"]),
         )
 
         while not self._shutdown_requested:
@@ -334,7 +361,7 @@ class SequenceDispatcher(EnrichmentProcessor):
             except Exception as exc:
                 self.logger.exception("outreach cycle error", error=str(exc))
 
-            time.sleep(INTERVAL_SECONDS)
+            time.sleep(config["interval"])
 
 
 def main() -> None:

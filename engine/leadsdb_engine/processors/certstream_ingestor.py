@@ -9,9 +9,10 @@ table as raw material for downstream enrichment.
 import hashlib
 import json
 import time
+from datetime import UTC
 from typing import Any
 
-from leadsdb_engine.db import connect, DomainEvent, INSERT_DOMAIN_EVENT
+from leadsdb_engine.db import INSERT_DOMAIN_EVENT, DomainEvent, connect
 from leadsdb_engine.domain_utils import normalize_domain
 from leadsdb_engine.processors.base import EnrichmentProcessor
 
@@ -97,24 +98,23 @@ class CertstreamIngestor(EnrichmentProcessor):
 
         not_before_str = None
         if not_before_ts:
-            from datetime import datetime, timezone
-            not_before_str = datetime.fromtimestamp(not_before_ts, tz=timezone.utc).isoformat()
+            from datetime import datetime
+            not_before_str = datetime.fromtimestamp(not_before_ts, tz=UTC).isoformat()
 
         count = 0
-        with connect() as conn:
-            with conn.cursor() as cur:
-                for domain in domains:
-                    event = DomainEvent(
-                        cert_fingerprint=fingerprint,
-                        registrable_domain=domain,
-                        log_id=f"{source_url} ({source_name})",
-                        san_entries=domains,
-                        not_before=not_before_str,
-                        issuer=None,
-                        source="certstream",
-                    )
-                    cur.execute(INSERT_DOMAIN_EVENT, event.model_dump())
-                    count += 1
+        with connect() as conn, conn.cursor() as cur:
+            for domain in domains:
+                event = DomainEvent(
+                    cert_fingerprint=fingerprint,
+                    registrable_domain=domain,
+                    log_id=f"{source_url} ({source_name})",
+                    san_entries=domains,
+                    not_before=not_before_str,
+                    issuer=None,
+                    source="certstream",
+                )
+                cur.execute(INSERT_DOMAIN_EVENT, event.model_dump())
+                count += 1
 
         return count
 

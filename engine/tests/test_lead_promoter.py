@@ -47,21 +47,20 @@ class TestImportsAndReferences:
         assert "INSERT INTO annotations" in INSERT_ANNOTATION
         assert "%(target_type)s" in INSERT_ANNOTATION
 
-    def test_lead_promoter_has_workspace_id(self):
-        # LeadPromoter reads LEADSDB_PROMOTE_WORKSPACE_ID from env.
-        import os
+    def test_lead_promoter_reads_settings_table_not_env(self):
+        # LeadPromoter loads workspace/threshold/interval/batch from the
+        # settings table via get_settings_map, not from env vars.
+        import inspect
 
-        # The module-level check raises RuntimeError if unset.
-        # We just verify the env var name is referenced in the module.
-        assert "LEADSDB_PROMOTE_WORKSPACE_ID" in open(
-            "leadsdb_engine/processors/lead_promoter.py"
-        ).read()
-
-    def test_lead_promoter_reuses_threshold_env(self):
-        # ENTITY_SCORER_THRESHOLD is the same env var entity_scorer.py uses.
-        assert "ENTITY_SCORER_THRESHOLD" in open(
-            "leadsdb_engine/processors/lead_promoter.py"
-        ).read()
+        source = inspect.getsource(LeadPromoter)
+        assert "get_settings_map" in source, "Promoter must read config from the settings table"
+        assert "os.environ" not in source, "Promoter must not read env vars for config"
+        assert "promoter_workspace_id" in source, (
+            "Promoter must reference the promoter_workspace_id setting"
+        )
+        assert "scorer_threshold" in source, (
+            "Promoter must use scorer_threshold as the promotion cutoff (single source of truth)"
+        )
 
     def test_promote_row_uses_jsonb(self):
         # The annotation value is wrapped in Jsonb({score, reasoning}).

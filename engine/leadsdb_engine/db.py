@@ -5,13 +5,15 @@ via the LDB_DATABASE_URL environment variable (injected by Infisical).
 """
 
 import os
+from collections.abc import Generator
 from contextlib import contextmanager
-from datetime import datetime, timezone
-from typing import Any, Generator
+from typing import Any
 
 import psycopg
 from psycopg.rows import dict_row
 from pydantic import BaseModel
+
+from leadsdb_engine import crypto
 
 
 def _connection_string() -> str:
@@ -46,9 +48,8 @@ def connect() -> Generator[psycopg.Connection, None, None]:
 @contextmanager
 def get_cursor():
     """Convenience: yield a cursor from a managed connection."""
-    with connect() as conn:
-        with conn.cursor() as cur:
-            yield cur
+    with connect() as conn, conn.cursor() as cur:
+        yield cur
 
 
 # --- Models -----------------------------------------------------------
@@ -468,26 +469,174 @@ RETURNING id
 
 
 # --- Settings queries --------------------------------------------------
-# The settings table stores tunable pipeline parameters. Processors read
-# them at the start of each cycle; the admin panel writes them.
-# All values have code-level defaults — the table just overrides.
+# The settings table stores tunable parameters and BYOK secrets. Processors
+# read them at the start of each cycle; the admin panel (and the settings CLI)
+# write them. Secret rows carry AES-GCM ciphertext in `encrypted_value` and
+# are decrypted transparently here via leadsdb_engine.crypto. All values have
+# code-level defaults in the processors — the table just overrides.
 
 GET_SETTING = """
-SELECT int_value, text_value, float_value, bool_value
+SELECT int_value, text_value, float_value, bool_value,
+       is_secret, encrypted_value, label, description, category
 FROM settings
 WHERE key = %(key)s
 """
 
+GET_SETTINGS_BY_CATEGORY = """
+SELECT key, int_value, text_value, float_value, bool_value,
+       is_secret, encrypted_value, label, description, category
+FROM settings
+WHERE category = %(category)s
+"""
 
-def get_setting(key: str) -> dict:
-    """Return a settings row as {int_value, text_value, float_value, bool_value}.
+UPSERT_SETTING = """
+INSERT INTO settings
+    (key, int_value, text_value, float_value, bool_value, is_secret,
+     encrypted_value, label, description, category)
+VALUES
+    (%(key)s, %(int_value)s, %(text_value)s, %(float_value)s, %(bool_value)s, false,
+     NULL, %(label)s, %(description)s, %(category)s)
+ON CONFLICT (key) DO UPDATE SET
+    int_value       = COALESCE(EXCLUDED.int_value,   settings.int_value),
+    text_value      = COALESCE(EXCLUDED.text_value,  settings.text_value),
+    float_value     = COALESCE(EXCLUDED.float_value, settings.float_value),
+    bool_value      = COALESCE(EXCLUDED.bool_value,  settings.bool_value),
+    is_secret       = false,
+    encrypted_value = NULL,
+    label           = COALESCE(EXCLUDED.label,        settings.label),
+    description     = COALESCE(EXCLUDED.description,  settings.description),
+    category        = COALESCE(EXCLUDED.category,     settings.category),
+    updated_at      = NOW()
+"""
 
-    Callers should access the typed column they expect and fall back to
-    their own code default if the key doesn't exist or the column is NULL.
+UPSERT_SECRET = """
+INSERT INTO settings
+    (key, int_value, text_value, float_value, bool_value, is_secret,
+     encrypted_value, label, description, category)
+VALUES
+    (%(key)s, NULL, NULL, NULL, NULL, true, %(encrypted_value)s,
+     %(label)s, %(description)s, %(category)s)
+ON CONFLICT (key) DO UPDATE SET
+    is_secret       = true,
+    encrypted_value = EXCLUDED.encrypted_value,
+    label           = COALESCE(EXCLUDED.label,        settings.label),
+    description     = COALESCE(EXCLUDED.description,  settings.description),
+    category        = COALESCE(EXCLUDED.category,     settings.category),
+    updated_at      = NOW()
+"""
+
+
+def _decode_secret(row: dict) -> str | None:
+    """Return the decrypted plaintext for a secret row, or None if unset.
+
+    Raises crypto.CryptoError if the row carries ciphertext that cannot be
+    decrypted (master key missing/rotated). Callers in processor loops catch
+    Exception and log; an explicit raise here surfaces a real misconfiguration
+    rather than silently idling.
+    """
+    if row.get("encrypted_value") is None:
+        return None
+    return crypto.decrypt(row["encrypted_value"])
+
+
+def _row_to_setting(row: dict) -> dict:
+    """Normalize a settings row into a typed dict plus a `secret_value` field.
+
+    `secret_value` is the decrypted plaintext for is_secret rows, None for
+    plain rows (or when the secret is unset).
+    """
+    out = {k: row.get(k) for k in ("int_value", "text_value", "float_value",
+                                   "bool_value", "label", "description", "category")}
+    out["is_secret"] = bool(row.get("is_secret"))
+    out["secret_value"] = _decode_secret(row) if out["is_secret"] else None
+    return out
+
+
+def get_setting(key: str) -> dict | None:
+    """Return one settings row as a typed dict, or None if the key is absent.
+
+    Plain rows expose their typed column; secret rows expose the decrypted
+    plaintext under `secret_value`. Never returns a row with raw ciphertext —
+    only decrypted/plaintext fields leave this module.
     """
     with connect() as conn, conn.cursor() as cur:
         cur.execute(GET_SETTING, {"key": key})
         row = cur.fetchone()
     if row is None:
-        return {"int_value": None, "text_value": None, "float_value": None, "bool_value": None}
-    return dict(row)
+        return None
+    return _row_to_setting(dict(row))
+
+
+def get_settings_map(category: str) -> dict[str, dict]:
+    """Return {key: typed-dict} for every setting in a category.
+
+    Processors call this at the start of each cycle and fall back to their own
+    code defaults when a key is missing or its value is None/blank.
+    """
+    with connect() as conn, conn.cursor() as cur:
+        cur.execute(GET_SETTINGS_BY_CATEGORY, {"category": category})
+        rows = cur.fetchall()
+    return {r["key"]: _row_to_setting(dict(r)) for r in rows}
+
+
+def set_setting(
+    key: str,
+    *,
+    int_value: int | None = None,
+    text_value: str | None = None,
+    float_value: float | None = None,
+    bool_value: bool | None = None,
+    label: str | None = None,
+    description: str | None = None,
+    category: str | None = None,
+) -> None:
+    """Upsert aplaintext setting (typed column of your choice).
+
+    COALESCE-on-conflict preserves any field passed as None and any seeded
+    label/description, so the admin panel can update a single column without
+    blanking the rest. To clear a text setting, pass text_value="" (not None).
+    """
+    with connect() as conn, conn.cursor() as cur:
+        cur.execute(
+            UPSERT_SETTING,
+            {
+                "key": key,
+                "int_value": int_value,
+                "text_value": text_value,
+                "float_value": float_value,
+                "bool_value": bool_value,
+                "label": label,
+                "description": description,
+                "category": category,
+            },
+        )
+        conn.commit()
+
+
+def set_secret(
+    key: str,
+    plaintext: str | None,
+    *,
+    label: str | None = None,
+    description: str | None = None,
+    category: str | None = None,
+) -> None:
+    """Upsert an encrypted secret (BYOK API keys, delivery keys, etc.).
+
+    plaintext=None clears the secret (stores NULL ciphertext). A non-None
+    value is AES-GCM encrypted with the master key before it touches the DB —
+    it is never stored in cleartext, and never logged.
+    """
+    encrypted = crypto.encrypt(plaintext) if plaintext else None
+    with connect() as conn, conn.cursor() as cur:
+        cur.execute(
+            UPSERT_SECRET,
+            {
+                "key": key,
+                "encrypted_value": encrypted,
+                "label": label,
+                "description": description,
+                "category": category,
+            },
+        )
+        conn.commit()

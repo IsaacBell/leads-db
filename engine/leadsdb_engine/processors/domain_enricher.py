@@ -11,23 +11,23 @@ flagged as LLM candidates for the EntityScorer.
 
 import asyncio
 import re
-import time
 from typing import Any
 
 import dns.resolver
 import httpx
 
 from leadsdb_engine.db import (
-    connect,
     GET_UNCLASSIFIED_DOMAINS,
     INSERT_CLASSIFICATION,
     DomainClassification,
+    connect,
+    get_settings_map,
 )
 from leadsdb_engine.processors.base import EnrichmentProcessor
 
 # ------------------------------------------------------------------
-# Configuration defaults.
-# Override these via the settings table (admin panel) — never env vars.
+# Code-level fallbacks. Overridden each cycle by the `enricher` settings
+# category — never read from env vars.
 # ------------------------------------------------------------------
 
 BATCH_SIZE = 50
@@ -74,16 +74,35 @@ class DomainEnricher(EnrichmentProcessor):
         super().__init__("domain-enricher")
 
     # ------------------------------------------------------------------
+    # Configuration
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _load_config() -> dict[str, Any]:
+        """Read the `enricher` settings category, falling back to code defaults."""
+        cfg = get_settings_map("enricher")
+
+        def typed(k, col, default):
+            return (cfg.get(k) or {}).get(col) or default
+
+        return {
+            "batch_size": int(typed("enricher_batch_size", "int_value", BATCH_SIZE)),
+            "concurrency": int(typed("enricher_concurrency", "int_value", CONCURRENCY)),
+            "http_timeout": float(typed("enricher_http_timeout", "int_value", HTTP_TIMEOUT)),
+            "dns_timeout": float(typed("enricher_dns_timeout", "int_value", DNS_TIMEOUT)),
+        }
+
+    # ------------------------------------------------------------------
     # DNS
     # ------------------------------------------------------------------
 
     @staticmethod
-    async def _resolve_dns(domain: str) -> bool:
+    async def _resolve_dns(domain: str, *, dns_timeout: float = DNS_TIMEOUT) -> bool:
         """Check whether a domain has any A, AAAA, or CNAME records."""
         try:
             resolver = dns.resolver.Resolver()
-            resolver.timeout = DNS_TIMEOUT
-            resolver.lifetime = DNS_TIMEOUT
+            resolver.timeout = dns_timeout
+            resolver.lifetime = dns_timeout
 
             for query_type in ("A", "AAAA", "CNAME"):
                 try:
@@ -106,7 +125,9 @@ class DomainEnricher(EnrichmentProcessor):
     # ------------------------------------------------------------------
 
     @staticmethod
-    async def _fetch_page(domain: str, client: httpx.AsyncClient) -> dict[str, Any]:
+    async def _fetch_page(
+        domain: str, client: httpx.AsyncClient, *, http_timeout: float = HTTP_TIMEOUT
+    ) -> dict[str, Any]:
         """Fetch a domain's landing page. Returns status, title, and a body preview."""
         result: dict[str, Any] = {
             "http_status": None,
@@ -119,7 +140,7 @@ class DomainEnricher(EnrichmentProcessor):
                 resp = await client.get(
                     f"{scheme}{domain}",
                     follow_redirects=True,
-                    timeout=HTTP_TIMEOUT,
+                    timeout=http_timeout,
                     headers={
                         "User-Agent": "Mozilla/5.0 (compatible; LeadsDBEnricher/1.0; +https://leads-db.com)",
                         "Accept": "text/html,application/xhtml+xml",
@@ -221,14 +242,17 @@ class DomainEnricher(EnrichmentProcessor):
     # Batch processing
     # ------------------------------------------------------------------
 
-    async def _process_batch(self, rows: list[dict[str, Any]]) -> list[DomainClassification]:
+    async def _process_batch(
+        self, rows: list[dict[str, Any]], config: dict[str, Any]
+    ) -> list[DomainClassification]:
         """Classify a batch of domains concurrently and return results."""
-        semaphore = asyncio.Semaphore(CONCURRENCY)
-        results: list[DomainClassification] = []
+        concurrency = config["concurrency"]
+        http_timeout = config["http_timeout"]
+        semaphore = asyncio.Semaphore(concurrency)
 
         async with httpx.AsyncClient(
-            limits=httpx.Limits(max_connections=CONCURRENCY),
-            timeout=httpx.Timeout(HTTP_TIMEOUT),
+            limits=httpx.Limits(max_connections=concurrency),
+            timeout=httpx.Timeout(http_timeout),
         ) as client:
 
             async def _process_one(row: dict[str, Any]) -> DomainClassification | None:
@@ -237,8 +261,12 @@ class DomainEnricher(EnrichmentProcessor):
 
                 async with semaphore:
                     try:
-                        dns_ok = await self._resolve_dns(domain)
-                        page_data = await self._fetch_page(domain, client)
+                        dns_ok = await self._resolve_dns(
+                            domain, dns_timeout=config["dns_timeout"]
+                        )
+                        page_data = await self._fetch_page(
+                            domain, client, http_timeout=config["http_timeout"]
+                        )
                         rules = self._classify_by_rules(domain, dns_ok, page_data)
 
                         return DomainClassification(
@@ -269,18 +297,24 @@ class DomainEnricher(EnrichmentProcessor):
 
     async def _loop(self) -> None:
         """Repeatedly fetch unclassified domains, enrich them, and store results."""
+        config = self._load_config()
         self.logger.info(
             "domain enricher started",
-            batch_size=BATCH_SIZE,
-            concurrency=CONCURRENCY,
+            batch_size=config["batch_size"],
+            concurrency=config["concurrency"],
+            http_timeout=config["http_timeout"],
+            dns_timeout=config["dns_timeout"],
         )
 
         while not self._shutdown_requested:
             try:
-                with connect() as conn:
-                    with conn.cursor() as cur:
-                        cur.execute(GET_UNCLASSIFIED_DOMAINS, {"limit": BATCH_SIZE})
-                        rows = cur.fetchall()
+                # Re-read config each cycle so admin-panel changes apply live.
+                config = self._load_config()
+                batch_size = config["batch_size"]
+
+                with connect() as conn, conn.cursor() as cur:
+                    cur.execute(GET_UNCLASSIFIED_DOMAINS, {"limit": batch_size})
+                    rows = cur.fetchall()
 
                 if not rows:
                     self.logger.info("no unclassified domains, sleeping 30s")
@@ -293,7 +327,7 @@ class DomainEnricher(EnrichmentProcessor):
                     domains=[r["registrable_domain"] for r in rows[:5]],
                 )
 
-                results = await self._process_batch(rows)
+                results = await self._process_batch(rows, config)
 
                 with connect() as conn:
                     with conn.cursor() as cur:
