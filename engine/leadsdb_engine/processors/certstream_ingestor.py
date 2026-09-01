@@ -6,6 +6,7 @@ normalizes them to registrable domains, and inserts them into the domain_events
 table as raw material for downstream enrichment.
 """
 
+import hashlib
 import json
 import time
 from typing import Any
@@ -29,8 +30,7 @@ class CertstreamIngestor(EnrichmentProcessor):
     # Certstream message parsing
     # ------------------------------------------------------------------
 
-    @staticmethod
-    def _extract_domains(message: dict[str, Any]) -> list[str]:
+    def _extract_domains(self, message: dict[str, Any]) -> list[str]:
         """Pull all unique, normalized domain names from a certstream message."""
         domains: set[str] = set()
 
@@ -71,7 +71,7 @@ class CertstreamIngestor(EnrichmentProcessor):
 
         domains = leaf_cert.get("all_domains", [])
         if domains:
-            return str(hash(tuple(sorted(domains))))
+            return hashlib.sha1("|".join(sorted(domains)).encode()).hexdigest()
 
         return f"certstream-{time.time_ns()}"
 

@@ -252,7 +252,7 @@ class DomainEnricher(EnrichmentProcessor):
                             has_contact_page=rules["has_contact_page"],
                             has_about_page=rules["has_about_page"],
                             is_parked=rules["is_parked"],
-                            llm_candidate=rules.get("llm_candidate", False),
+                            body_preview=page_data.get("body_preview"),
                         )
                     except Exception as exc:
                         self.logger.error("enrichment error", domain=domain, error=str(exc))

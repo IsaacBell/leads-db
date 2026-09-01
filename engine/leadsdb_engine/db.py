@@ -156,6 +156,7 @@ class DomainClassification(BaseModel):
     domain_age_days: int | None = None
     llm_score: float | None = None
     llm_reasoning: str | None = None
+    body_preview: str | None = None
 
 
 # --- Queries ----------------------------------------------------------
@@ -181,7 +182,7 @@ SELECT de.id, de.registrable_domain, de.san_entries, de.not_before
 FROM domain_events de
 LEFT JOIN domain_classifications dc ON dc.domain_event_id = de.id
 WHERE dc.id IS NULL
-  AND (de.last_classified_at IS NULL OR de.last_classified_at < NOW() - INTERVAL '1 day')
+  -- future: add re-enrichment check here (e.g. last_classified_at threshold)
 ORDER BY de.first_seen_at DESC
 LIMIT %(limit)s
 """
@@ -191,12 +192,12 @@ INSERT INTO domain_classifications
     (domain_event_id, dns_resolves, http_status, page_title,
      has_business_content, has_pricing, has_team_page,
      has_contact_page, has_about_page, is_parked,
-     domain_age_days, llm_score, llm_reasoning)
+     domain_age_days, llm_score, llm_reasoning, body_preview)
 VALUES
     (%(domain_event_id)s, %(dns_resolves)s, %(http_status)s, %(page_title)s,
      %(has_business_content)s, %(has_pricing)s, %(has_team_page)s,
      %(has_contact_page)s, %(has_about_page)s, %(is_parked)s,
-     %(domain_age_days)s, %(llm_score)s, %(llm_reasoning)s)
+     %(domain_age_days)s, %(llm_score)s, %(llm_reasoning)s, %(body_preview)s)
 ON CONFLICT (domain_event_id)
 DO UPDATE SET
     classified_at = NOW(),
@@ -211,7 +212,8 @@ DO UPDATE SET
     is_parked = EXCLUDED.is_parked,
     domain_age_days = EXCLUDED.domain_age_days,
     llm_score = EXCLUDED.llm_score,
-    llm_reasoning = EXCLUDED.llm_reasoning
+    llm_reasoning = EXCLUDED.llm_reasoning,
+    body_preview = EXCLUDED.body_preview
 """
 
 GET_LEADS = """

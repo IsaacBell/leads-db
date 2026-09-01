@@ -29,6 +29,7 @@ LLM_TIMEOUT = float(os.environ.get("ENTITY_SCORER_TIMEOUT", "30.0"))
 LLM_THRESHOLD = float(os.environ.get("ENTITY_SCORER_THRESHOLD", "0.5"))
 LLM_API_KEY = os.environ.get("ENTITY_SCORER_API_KEY", "")
 LLM_OPENAI_MODE = os.environ.get("ENTITY_SCORER_OPENAI", "").lower() in ("1", "true", "yes")
+ENTITY_SCORER_MAX_SCORED = int(os.environ.get("ENTITY_SCORER_MAX_SCORED", "0"))
 
 # ------------------------------------------------------------------
 # Prompt
@@ -78,6 +79,7 @@ class EntityScorer(EnrichmentProcessor):
             "format": "json",
         }
 
+        raw = ""
         try:
             resp = await client.post(LLM_API_URL, json=payload, timeout=LLM_TIMEOUT)
             resp.raise_for_status()
@@ -139,6 +141,7 @@ class EntityScorer(EnrichmentProcessor):
             model=LLM_MODEL,
             openai_mode=LLM_OPENAI_MODE,
             threshold=LLM_THRESHOLD,
+            max_scored_cap=ENTITY_SCORER_MAX_SCORED if ENTITY_SCORER_MAX_SCORED > 0 else "unlimited",
         )
 
         async with httpx.AsyncClient(
@@ -147,26 +150,30 @@ class EntityScorer(EnrichmentProcessor):
 
             while not self._shutdown_requested:
                 try:
-                    with connect() as conn:
-                        with conn.cursor() as cur:
-                            cur.execute(
-                                """SELECT dc.id AS classification_id,
-                                          dc.domain_event_id,
-                                          de.registrable_domain,
-                                          dc.page_title,
-                                          dc.dns_resolves,
-                                          dc.is_parked,
-                                          dc.http_status
-                                   FROM domain_classifications dc
-                                   JOIN domain_events de ON de.id = dc.domain_event_id
-                                   WHERE dc.llm_score IS NULL
-                                     AND dc.dns_resolves = true
-                                     AND dc.is_parked = false
-                                     AND (SELECT COUNT(*) FROM domain_classifications dc2
-                                          WHERE dc2.llm_score IS NOT NULL) < 1000
-                                   LIMIT 20"""
+                    with connect() as conn, conn.cursor() as cur:
+                        max_scored_clause = ""
+                        if ENTITY_SCORER_MAX_SCORED > 0:
+                            max_scored_clause = (
+                                f" AND (SELECT COUNT(*) FROM domain_classifications dc2"
+                                f"      WHERE dc2.llm_score IS NOT NULL) < {ENTITY_SCORER_MAX_SCORED}"
                             )
-                            rows = cur.fetchall()
+                        cur.execute(
+                            f"""SELECT dc.id AS classification_id,
+                                      dc.domain_event_id,
+                                      de.registrable_domain,
+                                      dc.page_title,
+                                      dc.body_preview,
+                                      dc.dns_resolves,
+                                      dc.is_parked,
+                                      dc.http_status
+                               FROM domain_classifications dc
+                               JOIN domain_events de ON de.id = dc.domain_event_id
+                               WHERE dc.llm_score IS NULL
+                                 AND dc.dns_resolves = true
+                                 AND dc.is_parked = false{max_scored_clause}
+                               LIMIT 20"""
+                        )
+                        rows = cur.fetchall()
 
                     if not rows:
                         self.logger.info("no domains for entity scoring, sleeping 60s")
@@ -181,9 +188,9 @@ class EntityScorer(EnrichmentProcessor):
 
                     for row in rows:
                         if LLM_OPENAI_MODE:
-                            result = await self._call_openai(row["page_title"], None, client)
+                            result = await self._call_openai(row["page_title"], row.get("body_preview"), client)
                         else:
-                            result = await self._call_ollama(row["page_title"], None, client)
+                            result = await self._call_ollama(row["page_title"], row.get("body_preview"), client)
 
                         self.logger.info(
                             "entity score",
