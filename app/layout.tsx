@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "LeadsDB — Settings",
-  description: "LeadsDB V2 — BYOK inference pipeline settings",
+  title: "LeadsDB",
+  description: "",
 };
 
 export default function RootLayout({
