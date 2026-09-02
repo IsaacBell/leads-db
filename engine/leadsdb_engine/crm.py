@@ -27,6 +27,9 @@ import json
 import os
 import sys
 
+from leadsdb_engine.logging import Log
+Log.error("test")
+
 from psycopg.types.json import Jsonb
 
 from leadsdb_engine.db import (

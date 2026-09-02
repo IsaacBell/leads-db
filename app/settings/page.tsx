@@ -166,9 +166,9 @@ export default function SettingsPage() {
           <div>
             <h1 style={{ margin: 0, fontSize: 22, letterSpacing: "-.03em" }}>Settings</h1>
             <p style={{ margin: "4px 0 0", color: "var(--muted)", fontSize: 13 }}>
-              Pipeline tuning and BYOK credentials — all stored in the database, re-read each cycle.
             </p>
-          </div>
+					</div>
+
           <button className="btn btn-ghost" onClick={fetchSettings} disabled={loading}>
             Refresh
           </button>

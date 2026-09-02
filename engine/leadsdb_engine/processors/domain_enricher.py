@@ -13,6 +13,21 @@ import asyncio
 import re
 from typing import Any
 
+import sentry_sdk
+sentry_sdk.init(
+    dsn="https://9bcdfca4cd5a2f0f92106495d382c33e@o4512013555662848.ingest.us.sentry.io/4512013573357568",
+    # Add data like request headers and IP for users,
+    # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
+    send_default_pii=False,
+    # Enable sending logs to Sentry
+    enable_logs=True,
+    # 1.0 = 100% tracing/sampling
+    traces_sample_rate=1.0,
+    # 1.0 = 100% session profiling
+    profile_session_sample_rate=1.0,
+)
+sentry_sdk.logger.error('This is an error message')
+
 import dns.resolver
 import httpx
 

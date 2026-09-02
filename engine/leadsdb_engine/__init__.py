@@ -5,3 +5,5 @@ Packages:
     db:          Postgres connection, models, queries
     domain_utils: Domain normalization utilities
 """
+from leadsdb_engine.logging import Log
+Log.error("test")

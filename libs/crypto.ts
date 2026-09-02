@@ -21,7 +21,8 @@ const MASTER_KEY_ENV = "LDB_SETTINGS_ENCRYPTION_KEY";
 export class CryptoError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = "CryptoError";
+		this.name = "CryptoError";
+		Object.setPrototypeOf(this, new.target.prototype);
   }
 }
 
@@ -55,13 +56,7 @@ const masterKey = (): Buffer | null => {
 /**
  * Is a usable master key present?
  */
-export const isAvailable = (): boolean => {
-  try {
-    return masterKey() !== null;
-  } catch {
-    return false;
-  }
-}
+export const isAvailable = (): boolean => masterKey() !== null;
 
 /**
  * Encrypt a UTF-8 string to `nonce || ciphertext+tag` bytes via AES-GCM.
@@ -90,10 +85,6 @@ export function encrypt(plaintext: string): Buffer {
  * Decrypt a value produced by `encrypt()` back to a UTF-8 string.
  */
 export function decrypt(token: Buffer): string {
-  if (!Buffer.isBuffer(token)) {
-    throw new CryptoError("ciphertext must be a Buffer");
-  }
-
   if (token.length < NONCE_BYTES + 16) {
     throw new CryptoError("ciphertext too short or malformed");
   }

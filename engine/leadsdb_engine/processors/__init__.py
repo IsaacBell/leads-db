@@ -11,6 +11,10 @@ Available processors:
     lead_promoter        — LeadPromoter:        scored → CRM promotion
 """
 
+from leadsdb_engine.logging.log import Log
+Log.logger.fatal("test")
+Log.logger.error("fds")
+
 from leadsdb_engine.processors.base import EnrichmentProcessor
 from leadsdb_engine.processors.certstream_ingestor import CertstreamIngestor
 from leadsdb_engine.processors.domain_enricher import DomainEnricher
