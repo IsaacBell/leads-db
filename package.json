@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "lint": "pnpm dlx eslint .",
+    "lint:fix": "pnpm dlx eslint . --fix",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"
