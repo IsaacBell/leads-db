@@ -61,23 +61,6 @@ a, button { outline-color: var(--coral); outline-offset: 4px; }
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 .leads-page {
   --ink: #101114;
   --muted: #70737a;
@@ -539,5 +522,139 @@ a, button { outline-color: var(--coral); outline-offset: 4px; }
 
   .leads-footer {
     grid-template-columns: 1fr;
+  }
+}
+
+
+
+
+
+
+
+.site-header {
+  position: relative;
+  z-index: 20;
+  width: 100%;
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, .92);
+  backdrop-filter: blur(12px);
+}
+
+.site-header-inner {
+  max-width: 1180px;
+  min-height: 68px;
+  display: flex;
+  align-items: center;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.site-logo {
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: -.065em;
+  text-decoration: none;
+}
+
+.site-logo span {
+  color: #85858a;
+}
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  margin-left: 70px;
+}
+
+.site-nav a {
+  position: relative;
+  color: #65666b;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color .15s ease;
+}
+
+.site-nav a:hover {
+  color: var(--ink);
+}
+
+.site-nav a::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: -8px;
+  left: 0;
+  height: 1px;
+  background: var(--ink);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform .2s ease;
+}
+
+.site-nav a:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+.header-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  margin-left: auto;
+  padding: 0 13px;
+  border-radius: 7px;
+  background: var(--ink);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: .2s ease;
+}
+
+.header-cta span {
+  font-size: 14px;
+  transition: transform .2s ease;
+}
+
+.header-cta:hover {
+  background: #292a2e;
+  transform: translateY(-1px);
+}
+
+.header-cta:hover span {
+  transform: translateX(2px);
+}
+
+@media (max-width: 650px) {
+  .site-header-inner {
+    min-height: 62px;
+  }
+
+  .site-nav {
+    gap: 16px;
+    margin-left: auto;
+    margin-right: 16px;
+  }
+
+  .site-nav a {
+    font-size: 11px;
+  }
+
+  .header-cta {
+    display: none;
+  }
+}
+
+@media (max-width: 450px) {
+  .site-nav {
+    gap: 12px;
+  }
+
+  .site-nav a:nth-child(3) {
+    display: none;
   }
 }

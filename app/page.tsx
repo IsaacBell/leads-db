@@ -1,4 +1,4 @@
-import SettingsHeader from "@/app/settings/header";
+import Header from "@/components/header";
 
 const industries = [
   "Broadcast Media",
@@ -36,7 +36,7 @@ const industries = [
 export default function Home() {
   return (
     <>
-      <SettingsHeader />
+      <Header />
 
       <main className="shell leads-page">
         {/* Hero */}

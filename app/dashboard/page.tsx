@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
-import SettingsHeader from "@/app/settings/header";
+import Header from "@/components/header";
 
 export default function Home() {
 	return (<>
-		<SettingsHeader />
+		<Header />
       <div className="shell">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
           <div>

@@ -5,9 +5,11 @@ import NextError from "next/error";
 import { useEffect } from "react";
 
 export default function GlobalError({
-  error,
+	error,
+  statusCode = 500
 }: {
-  error: Error & { digest?: string };
+		error: Error & { digest?: string };
+		statusCode: number;
 }) {
   useEffect(() => {
     Sentry.captureException(error);
@@ -20,7 +22,10 @@ export default function GlobalError({
         definition requires a `statusCode` prop. However, since the App Router
         does not expose status codes for errors, we simply pass 0 to render a
         generic error message. */}
-        <NextError statusCode={0} />
+				<NextError
+					statusCode={statusCode}
+					title={process.env.NODE_ENV.includes("dev") ? error.name ?? error.message : "There was an error!"}
+				/>
       </body>
     </html>
   );

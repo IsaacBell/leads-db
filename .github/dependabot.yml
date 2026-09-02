@@ -43,8 +43,6 @@ updates:
       - "dependencies"
       - "python"
       - "uv"
-    reviewers:
-      - "IsaacBell"
     commit-message:
       prefix: "deps"
       prefix-development: "deps(dev)"
