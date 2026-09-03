@@ -1,5 +1,7 @@
 import Header from "@/components/header";
 
+// jsonLD
+
 const industries = [
   "Broadcast Media",
   "Capital Markets",

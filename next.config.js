@@ -2,6 +2,12 @@
 import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig = {
+	cacheComponents: true,
+	partialPrefetching: true,
+  experimental: {
+    useOffline: true,
+    webpackMemoryOptimizations: true,
+	},
   webpack: (config) => {
     config.experiments = { ...config.experiments, topLevelAwait: true };
     return config;
@@ -10,6 +16,6 @@ const nextConfig = {
 
 export default withSentryConfig(nextConfig, {
   org: "isaac-bell-3a", // @TODO - make this configurable
-  project: "javascript-nextjs",
+  project: "leads-db",
   silent: !process.env.CI,
 });
