@@ -1,0 +1,30 @@
+.app-shell {
+  background-color: var(--surface-canvas);
+  color: var(--text-primary);
+}
+
+.app-sidebar {
+  background-color: var(--surface-sidebar);
+  border-color: var(--border-default);
+}
+
+.app-card {
+  background-color: var(--surface-card);
+  border-color: var(--border-default);
+  box-shadow: var(--shadow-sm);
+}
+
+.app-card-elevated {
+  background-color: var(--surface-elevated);
+  border-color: var(--border-default);
+  box-shadow: var(--shadow-overlay);
+}
+
+.transition-standard {
+  transition-duration: var(--motion-base);
+  transition-timing-function: var(--easing-standard);
+}
+
+.ring-accent {
+  --tw-ring-color: var(--accent-500);
+}
