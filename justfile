@@ -253,6 +253,12 @@ ci-whitespace:
     @bash scripts/guard-whitespace.sh . --fail-on-violation
     @echo "  ✓ whitespace integrity check passed"
 
+# All static security analysis functions - run remotely in CI
+ci-security: ci-ioc ci-silver-gate ci-whitespace
+
+# All pre-commit actions - run locally on developer machines
+pre-commit: ci-ioc ci-silver-gate ci-whitespace
+
 ci-engine-test:
     cd engine && uv run pytest --junitxml=test-results.xml
 

@@ -35,8 +35,11 @@ jobs:
       - name: Install just
         uses: extractions/setup-just@v2
 
-      - name: CI check (syntax + types + shell)
+      - name: CI check (lint + justfile fmt)
         run: just ci-check
+
+      - name: TypeScript typecheck
+        run: pnpm exec tsc --noEmit
 
   quality:
     runs-on: ubuntu-latest
@@ -152,7 +155,7 @@ jobs:
         uses: extractions/setup-just@v2
 
       - name: IOC scan (obfuscation patterns semgrep can't catch)
-        run: just ci-ioc
+        run: pnpm dlx am-i-compromised
 
   silver-gate:
     runs-on: ubuntu-latest

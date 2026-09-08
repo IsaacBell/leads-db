@@ -8,4 +8,12 @@ export default defineConfig([
 			"no-constant-binary-expression": "error",
 		},
 	},
+	{
+		ignores: [
+			"**/.next/**",
+			"**/.vercel/**",
+			"**/engine/.venv/**",
+			"**/tsconfig.tsbuildinfo",
+		],
+	},
 ]);
