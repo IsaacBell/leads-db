@@ -1,0 +1,19 @@
+# Copy to fnox.toml and run `fnox` setup to add your real encrypted INFISICAL_TOKEN.
+# Do NOT commit fnox.toml (it contains your age/fido-encrypted Infisical token).
+# This example is public-safe: the age recipient is a public key; there are no secrets.
+default_provider = "age"
+
+[providers.age]
+type = "age"
+# TODO: replace with your age public recipient (safe to share)
+recipients = ["age1<your-public-recipient>"]
+
+[providers.infisical]
+type = "infisical"
+project_id = "<your-infisical-project-id>"
+environment = "Development"
+path = "/leads-db"
+
+# Encrypted via `fnox` after setup:
+[secrets]
+# INFISICAL_TOKEN = { provider = "age", value = "<encrypted by fnox>" }

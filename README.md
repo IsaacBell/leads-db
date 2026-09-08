@@ -5,15 +5,37 @@
 **Open-source B2B lead pipeline — CT-log discovery → enrichment → LLM scoring → CRM → outreach**
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
-![CI](https://github.com/IsaacBell/leads-db/actions/workflows/ci.yml/badge.svg)
+![Next.js](https://img.shields.io/badge/Next.js-16-black.svg)
+![React](https://img.shields.io/badge/React-19-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.12+-yellow.svg)
-![Next.js](https://img.shields.io/badge/Next.js-13-black.svg)
-![Neon](https://img.shields.io/badge/DB-Neon_Postgres-green.svg)
+![Postgres](https://img.shields.io/badge/DB-Postgres-green.svg)
 
 </div>
 
+LeadsDB turns certificate-transparency logs into a working B2B lead pipeline:
+
+1. **Ingest** raw domains from the certstream WebSocket
+2. **Enrich** domains with DNS/HTTP + rule-based classification
+3. **Score** promising domains with any LLM (BYOK)
+4. **Promote** scored domains into a multi-tenant CRM
+5. **Outreach** via pluggable email transports (log-only by default)
+
+The web UI (Next.js) and the Python engine share one Postgres database.
+
 ---
 
+## Stack
+
+| Layer | Technology |
+|---|---|
+| Frontend / API | Next.js 16 (App Router), React 19, TypeScript, Tailwind, pnpm |
+| Engine | Python 3.12, asyncio, httpx, psycopg3, uv |
+| Database | Postgres (Neon serverless supported) |
+| Data source | Certificate Transparency logs via certstream |
+| LLM scoring | Any OpenAI-compatible endpoint (BYOK) |
+| Email | Resend (magic-link auth + outreach transport adapter) |
+| Auth | Better Auth (self-hosted, magic link) |
+| Secrets | Infisical (maintainers) / `.env` (self-hosters) |
 
 ---
 
@@ -21,109 +43,73 @@
 
 ### Prerequisites
 
-You will need just. Install it with one of the following:
+Install [mise](https://mise.jdx.dev), then run from the repo root to install the pinned toolchain (Node, pnpm, Python, uv, just, vercel):
 
 ```shell
-% brew install just
-% apt install just
+mise install
+mise exec -- pnpm install
 ```
 
-| Dependency | Version |
-|---|---|
-| Node.js | 18+ |
-| Python | 3.12+ |
-| [uv](https://docs.astral.sh/uv/) | latest |
-| [pnpm](https://pnpm.io) | 9+ |
-| [just](https://github.com/casey/just) | latest |
+Alternative: install tools manually. Minimums: Node 20.19+, pnpm 9+, Python 3.12+, [uv](https://docs.astral.sh/uv), [just](https://github.com/casey/just).
 
-### Clone & install
+### Configure secrets
 
-```bash
-git clone https://github.com/IsaacBell/leads-db.git
-cd leads-db
+Copy the template and fill blanks (never commit `.env`):
 
-# Frontend
-pnpm install
-
-# Engine (Python)
-# [@todo - install setup should be in justfile]
-cd engine && uv sync --extra dev && cd ..
+```shell
+cp .env.example .env
 ```
+
+You need at minimum `LDB_DATABASE_URL` (see below). Maintainers inject the full secret set from Infisical path `/leads-db` instead.
 
 ### Set up the database
 
-Set up Postgres. You can use a free provider like Neon, or create your own manually. 
+Postgres is required. Use a free hosted provider like [Neon](https://neon.tech), or run one locally. Set the connection string in `.env`:
 
-Either way, when your database is created, save your connection string.
+```
+LDB_DATABASE_URL=postgresql://user:pass@host/db?sslmode=require
+```
 
-Example:
-`postgresql://user:pass@host/db?sslmode=require`
+Apply migrations (SQL lives in `src/migrations`):
 
-@todo - where the hell to save the connection string? In-app setting + env var fallback else prompt user to enter during install/setup.
----
-Apply migrations:
-
-```bash
+```shell
 just leadsdb-migrate
-```
-
-### Generate the settings encryption key
-
-@todo - this is awful awful awful. users just enter their key in a form and we do standard encryption on it. this is terrible
-
-BYOK API keys are stored **encrypted at rest** in the `settings` table. Generate a master key:
-
-```bash
-python -c "import secrets,base64; print(base64.urlsafe_b64encode(secrets.token_bytes(32)).decode())"
-```
-
-@todo - making users set encrypted env vars?????????????
-
-Set it as an environment variable (the only secret that lives outside the DB):
-
-```bash
-export LDB_SETTINGS_ENCRYPTION_KEY="your-generated-key-here"
-```
-
-
-
-
-@todo - THIS SUCKS
-
-### Configure your LLM (BYOK)
-
-Point the scorer at any OpenAI-compatible endpoint — OpenAI, DeepInfra, Vercel AI Gateway, vLLM, llama.cpp, Ollama's OpenAI-compat mode, etc. Use the settings CLI (or your DB client) to set:
-
-```sql
--- Your endpoint and model (plaintext settings)
-UPDATE settings SET text_value = 'https://api.openai.com/v1/chat/completions' WHERE key = 'scorer_api_url';
-UPDATE settings SET text_value = 'gpt-4o-mini'                                    WHERE key = 'scorer_model';
-
--- Your API key (encrypted at rest — use the settings CLI, not raw SQL)
--- just settings-set-secret scorer_api_key "sk-..."
-```
-
-Until `scorer_api_url` and `scorer_model` are set, the scorer logs once and idles — it never guesses a default host.
-
-### Run the pipeline
-
-```bash
-just leadsdb-run   # starts all processors in sequence (Redis-style background loop)
-# or run individually:
-just leadsdb-enrich   # enrichment processor
-just leadsdb-score    # entity scorer (needs BYOK config above)
-just leadsdb-promote  # promoter (scored domains → CRM)
+# or, without the just/Infisical wrapper:
+psql "$LDB_DATABASE_URL" -f src/migrations/001_create_extensions.sql   # ...repeat per file
 ```
 
 ### Run the frontend
 
-```bash
-pnpm dev   # Next.js dev server on localhost:3000
+```shell
+pnpm dev   # http://localhost:3000
+```
+
+Sign-in uses magic links. With no `RESEND_API_KEY` set, magic links are logged to the server console (dev only); set `RESEND_API_KEY` to send real emails.
+
+### Run the pipeline (Python engine)
+
+```shell
+just leadsdb-run       # all processors in sequence
+just leadsdb-enrich    # stage 2
+just leadsdb-score     # stage 3 (needs LLM config, below)
+just leadsdb-promote   # stage 4
 ```
 
 ---
 
-@Todo - DO YOU NOT KNOW WHAT FUCKING BYOK MEANS???????? WHAT IS THIS SHITTY TABLE
+## Environment variables
+
+See [`.env.example`](.env.example) for the full documented list with blanks. The core ones:
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `LDB_DATABASE_URL` | Yes | Postgres connection string |
+| `BETTER_AUTH_SECRET` | Yes (prod) | Auth session encryption. Generate: `openssl rand -base64 32` |
+| `BETTER_AUTH_URL` | Yes | Public base URL (e.g. `http://localhost:3000`) |
+| `RESEND_API_KEY` | Auth needs email | Sends magic links (unset = log to console, dev only) |
+| `LEADSDB_ADMIN_TOKEN` | Settings API | Gates the `/api/v1/settings` admin routes |
+
+---
 
 ## BYOK & security model
 
@@ -135,10 +121,16 @@ LeadsDB is **bring-your-own-key**. No AI provider is baked in. Your LLM endpoint
 | LLM model name (`scorer_model`) | `settings` table | No — it's a model id |
 | LLM API key (`scorer_api_key`) | `settings` table | **Yes** — AES-256-GCM at rest |
 | Outreach transport key (`outreach_api_key`) | `settings` table | **Yes** — AES-256-GCM at rest |
-| Master encryption key (`LDB_SETTINGS_ENCRYPTION_KEY`) | Env var / Infisical | N/A — the key itself |
-| Database URL (`LDB_DATABASE_URL`) | Env var / Infisical | N/A — connection string |
+| Master encryption key | Env / Infisical | N/A — the key itself |
 
-The only two environment variables are the database connection string and the settings encryption key. Everything else — endpoint URLs, model names, tuning knobs, workspace selectors, API keys — lives in the `settings` table and can be changed at runtime without a restart.
+Configure the scorer through the settings CLI or DB:
+
+```sql
+UPDATE settings SET text_value = 'https://api.openai.com/v1/chat/completions' WHERE key = 'scorer_api_url';
+UPDATE settings SET text_value = 'gpt-4o-mini' WHERE key = 'scorer_model';
+```
+
+Until `scorer_api_url` and `scorer_model` are set, the scorer logs once and idles.
 
 ---
 
@@ -149,24 +141,35 @@ Outreach is vendor-agnostic. The `outreach_transport` setting selects the adapte
 | Transport | What it does | Status |
 |---|---|---|
 | `noop` | Logs what it would send — no real email. **Default.** | ✅ Built-in |
-| `resend` | Live sends via the Resend HTTP API (for maintainer testing) | ✅ Reference adapter |
+| `resend` | Live sends via the Resend HTTP API | ✅ Reference adapter |
 
-To add a provider: create `transports/<name>.py` implementing `EmailTransport`, register it in `transports/__init__.py`, and set `outreach_transport`. A fresh deploy cannot send cold email to anyone — the default is always log-only.
+Add a provider by implementing `EmailTransport` in `engine/leadsdb_engine/transports/`, registering it, and setting `outreach_transport`. A fresh deploy cannot send cold email — default is log-only.
 
 ---
 
-## Tech stack
+## Repo layout
 
-| Layer | Technology |
-|---|---|
-| Frontend | Next.js 13, React 18, TypeScript, Tailwind |
-| API | Next.js API routes (replaces V1 Flask) |
-| Engine | Python 3.12+, asyncio, httpx, psycopg3 |
-| Database | Neon Postgres (serverless, scale-to-zero) |
-| Data source | Certificate Transparency logs via certstream |
-| LLM scoring | Any OpenAI-compatible endpoint (BYOK) |
-| Email outreach | Pluggable transport adapter (noop / resend / extensible) |
-| Secrets | AES-256-GCM encryption at rest, Infisical for the master key |
+```
+leads-db/
+├── src/
+│   ├── app/            # Next.js pages + API routes
+│   │   └── api/        #   v1, v2 route handlers
+│   ├── lib/            # frontend libs (api client, auth)
+│   ├── migrations/     # SQL migrations (001–009)
+│   └── wip/            # operator-shell pages (old repo, being wired in)
+├── engine/
+│   └── leadsdb_engine/
+│       ├── processors/ # certstream, enricher, scorer, promoter, dispatcher
+│       ├── transports/ # email transport adapters (noop, resend)
+│       ├── crypto.py   # AES-GCM settings encryption
+│       ├── db.py       # Postgres layer + settings read/write
+│       ├── crm.py      # CLI for contacts/deals/annotations
+│       └── pii.py      # Safe Harbor masking
+├── scripts/            # Guardrails, CI helpers, migrations
+├── .mise.toml          # pinned toolchain (Node/Python/uv/just/vercel)
+├── .env.example        # documented env template (fork-safe)
+└── justfile            # task runner (CRM, pipeline, CI, deploy)
+```
 
 ---
 
@@ -174,7 +177,7 @@ To add a provider: create `transports/<name>.py` implementing `EmailTransport`, 
 
 Built-in multi-tenant CRM with Safe Harbor PII masking. Contacts, companies, deals, annotations, social links — all with soft deletes and workspace isolation.
 
-```bash
+```shell
 just crm-add "jane@example.com" --name "Jane Doe"     # add a lead (PII masked on read)
 just crm-list                                          # list (masked by default)
 just crm-list --reveal                                 # full PII (use with care)
@@ -184,84 +187,30 @@ just crm-annotation-add contact 42 linkedin '{"headline":"CTO"}'  # enrich
 
 ---
 
-## Architecture
+## DevSecOps & tooling
 
-See [`V2-PLAN.md`](V2-PLAN.md) for the full design doc and [`V2-STATUS.md`](V2-STATUS.md) for current state.
+Every push runs a security and quality gate (lint, typecheck, tests, SAST, IOC scan, whitespace guard).
 
-```
-leads-db/
-├── app/                    # Next.js frontend + API routes
-├── engine/                 # Python pipeline
-│   └── leadsdb_engine/
-│       ├── processors/     # certstream, enricher, scorer, promoter, dispatcher
-│       ├── transports/     # email transport adapters (noop, resend)
-│       ├── crypto.py       # AES-GCM settings encryption
-│       ├── db.py           # Neon Postgres layer + settings read/write
-│       ├── crm.py          # CLI for contacts/deals/annotations
-│       ├── pii.py          # Safe Harbor HIPAA-18 masking
-│       └── domain_utils.py
-├── migrations/            # SQL migrations (001–009)
-├── scripts/               # Guardrails, CI helpers
-├── justfile               # Task runner (CRM, pipeline, CI, deploy)
-└── .github/               # CI, security scans, dependabot
+| Tool | Role |
+|---|---|
+| [mise](.mise.toml) | Pinned runtimes/tools for reproducible builds |
+| [Infisical](https://infisical.com) | Maintainer secret store (path `/leads-db`) |
+| [fnox](fnox.toml.example) | Optional passkey-gated access to Infisical |
+| guard scripts | PII/secret/whitespace enforcement in CI |
+
+```shell
+just install-hooks    # install git hooks
+just ci-check         # run the local gate before pushing
 ```
 
----
-
-## DevSecOps
-
-Every PR runs a multi-layer security and quality gate:
-
-| Check | Tool | When |
-|---|---|---|
-| Lint + typecheck | Next.js / TypeScript | Push + PR |
-| Python lint | Ruff + Bandit | Push + PR |
-| JS tests | Vitest | Push + PR |
-| Python tests | pytest | Push + PR |
-| SAST | Semgrep (13 custom rules) | Push + PR |
-| Shell lint | ShellCheck | Push + PR |
-| Dependency audit | npm audit + uv audit + pip-audit | Weekly |
-| Deep security scan | Semgrep + Bandit | Weekly (Mon 06:00 UTC) |
-| Dep updates | Dependabot (grouped) | Weekly PRs |
-
-```bash
-just ci-check    # run everything CI runs
-just ruff         # python lint only
-just ci-bandit    # python SAST only
-```
-
----
-
-## Roadmap
-
-- [x] CT-log ingestion → domain events
-- [x] DNS/HTTP enrichment + rule-based classification
-- [x] LLM entity scoring (BYOK, any OpenAI-compatible endpoint)
-- [x] CRM schema (contacts, companies, deals, annotations, social links)
-- [x] Lead promotion pipeline
-- [x] Outreach dispatch (pluggable transport, noop default)
-- [x] DevSecOps foundation (CI, SAST, secrets guard)
-- [ ] docker-compose for one-command local stack (Phase 1 goal)
-- [ ] Contact/email discovery (CT logs give domains, not people)
-- [ ] Freemium API keys + rate limiting (Phase 2)
-- [ ] Analytics funnel bridge to `analytics-engine`
-
-Full phase breakdown in [`V2-PLAN.md`](V2-PLAN.md).
+Self-hosters skip Infisical/fnox entirely and use `.env`.
 
 ---
 
 ## Contributing
 
-This project follows a trunk-based branching strategy. See the DevSecOps section above for the CI gate — every push must pass lint, tests, and SAST.
-
-```bash
-# Install hooks
-just install-hooks
-
-# Run the full local gate before pushing
-just ci-check
-```
+Trunk-based branching. Every push must pass the CI gate.
 
 ## License
 
-[MIT](LICENSE) — LeadsDB has been publicly MIT-licensed since 2024.
+[MIT](LICENSE) — publicly MIT-licensed since 2024.

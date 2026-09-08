@@ -31,6 +31,11 @@ yarn-error.log*
 # local env files
 .env*.local
 .env*
+!.env.example
+
+# local secret-bearing config (contains age/fido-encrypted Infisical token)
+fnox.toml
+.mise.local.toml
 
 # vercel
 .vercel
