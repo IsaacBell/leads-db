@@ -58,8 +58,8 @@ export default function Home() {
             </p>
 
             <div className="hero-actions">
-              <a href="#preferences" className="btn btn-primary">
-                Get Leads Today
+              <a href="/register" className="btn btn-primary">
+                Get Started
               </a>
               <a href="#how-it-works" className="btn btn-ghost">
                 Learn More

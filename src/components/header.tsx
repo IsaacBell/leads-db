@@ -15,8 +15,8 @@ export default function SettingsHeader() {
           <Link href="/contact">Contact</Link>
         </nav>
 
-        <Link href="#preferences" className="header-cta">
-          Get Leads <span>→</span>
+        <Link href="/login" className="header-cta">
+          Get Started <span>→</span>
         </Link>
       </div>
     </header>

@@ -3,19 +3,25 @@ import type { User } from '../../types/auth'
 
 export type LoginPayload = {
   email: string
-  password: string
 }
 
 export type RegisterPayload = {
   email: string
-  password: string
-  name: string
+  name?: string
 }
 
-export type AuthMode = 'local' | 'kinde'
+/**
+ * @deprecated Legacy mode flag, retained so in-flight operator-shell pages
+ * keep compiling. Identity is now a Better Auth session cookie; see `user`.
+ */
+export type AuthMode = 'better-auth'
 
 export type AuthContextValue = {
   mode: AuthMode
+  /**
+   * @deprecated this is always null. Protected data routes must read the session server-side;
+   * shell pages still gating on `token` need migrating to that model.
+   */
   token: string | null
   user: User | null
   isLoading: boolean

@@ -1,46 +1,35 @@
+'use client'
+
 import { useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useAuth } from "@/src/lib/auth/useAuth"
 import { Button } from "@/src/components/wip/layout/ui/button"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/src/components/wip/layout/ui/card"
 import { Input } from "@/src/components/wip/layout/ui/input"
 
 /**
- * Account creation page.
+ * Account creation. Better Auth creates the user on first magic-link sign-in,
+ * so this just collects a name and kicks off the same email flow.
  */
-export function RegisterPage() {
-  const { register, mode } = useAuth()
-  const navigate = useNavigate()
-
+export default function RegisterPage() {
+  const { register } = useAuth()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [sent, setSent] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  async function handleLocalSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setIsSubmitting(true)
     setError(null)
 
     try {
-      await register({ name, email, password })
-      navigate('/', { replace: true })
+      await register({ name, email })
+      setSent(true)
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'Unable to create account right now')
     } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  async function handleKindeRegister() {
-    setIsSubmitting(true)
-    setError(null)
-
-    try {
-      await register()
-    } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : 'Unable to create account right now')
       setIsSubmitting(false)
     }
   }
@@ -51,22 +40,18 @@ export function RegisterPage() {
         <CardHeader className="px-0 pt-0">
           <p className="text-xs font-medium text-neutral-500">LeadsDB</p>
           <CardTitle className="text-2xl">Create account</CardTitle>
-          <CardDescription>
-            {mode === 'kinde' ? 'Create your account with Kinde.' : 'Create your account.'}
-          </CardDescription>
+          <CardDescription>Enter your name and email to get started.</CardDescription>
         </CardHeader>
 
-        {mode === 'kinde' ? (
-          <div className="space-y-4">
-            {error ? (
-              <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p>
-            ) : null}
-            <Button type="button" className="w-full" onClick={handleKindeRegister} disabled={isSubmitting}>
-              {isSubmitting ? 'Redirecting…' : 'Create account with Kinde'}
-            </Button>
+        {sent ? (
+          <div className="space-y-2 text-sm text-neutral-700">
+            <p>Almost done. We emailed a sign-in link to <strong>{email}</strong> — open it to activate your account.</p>
+            <button type="button" className="font-medium text-emerald-700 hover:text-emerald-600" onClick={() => setSent(false)}>
+              Use a different email
+            </button>
           </div>
         ) : (
-          <form className="space-y-4" onSubmit={handleLocalSubmit}>
+          <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-neutral-800" htmlFor="register-name">
                 Full name
@@ -94,27 +79,12 @@ export function RegisterPage() {
               />
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-neutral-800" htmlFor="register-password">
-                Password
-              </label>
-              <Input
-                id="register-password"
-                required
-                type="password"
-                autoComplete="new-password"
-                minLength={8}
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-              />
-            </div>
-
             {error ? (
               <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p>
             ) : null}
 
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? 'Creating account...' : 'Create account'}
+            <Button type="submit" className="w-full" disabled={isSubmitting || !name || !email}>
+              {isSubmitting ? 'Sending…' : 'Create account'}
             </Button>
           </form>
         )}
