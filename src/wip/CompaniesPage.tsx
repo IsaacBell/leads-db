@@ -9,10 +9,10 @@ import { DuplicateReviewCard } from '../components/app/duplicate-review-card.tsx
 import { EntityHeader } from '../components/app/entity-header.tsx'
 import { SaveViewDialog } from '../components/app/save-view-dialog.tsx'
 import { SectionHeader } from '../components/app/section-header.tsx'
-import { Badge } from '../components/ui/badge.tsx'
-import { Button } from '../components/ui/button.tsx'
-import { Card, CardDescription, CardHeader, CardTitle } from '../components/ui/card.tsx'
-import { Input } from '../components/ui/input.tsx'
+import { Badge } from '@/src/components/wip/layout/ui/badge.tsx'
+import { Button } from '@/src/components/wip/layout/ui/button.tsx'
+import { Card, CardDescription, CardHeader, CardTitle } from '@/src/components/wip/layout/ui/card.tsx'
+import { Input } from '@/src/components/wip/layout/ui/input.tsx'
 import { apiRequest } from '../lib/api.js'
 import {
   buildCustomSavedViewKey,
