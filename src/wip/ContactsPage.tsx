@@ -2,25 +2,25 @@ import { useMemo, useState, type FormEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Copy, Plus, UserCircle2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../auth/useAuth.ts'
-import { DataTable } from '../components/app/data-table.tsx'
-import { DetailSidebar } from '../components/app/detail-sidebar.tsx'
-import { DuplicateReviewCard } from '../components/app/duplicate-review-card.tsx'
-import { EntityHeader } from '../components/app/entity-header.tsx'
-import { SaveViewDialog } from '../components/app/save-view-dialog.tsx'
-import { SectionHeader } from '../components/app/section-header.tsx'
-import { StatusBadge } from '../components/app/status-badge.tsx'
-import { Button } from '../components/ui/button.tsx'
-import { Card, CardDescription, CardHeader, CardTitle } from '../components/ui/card.tsx'
-import { Input } from '../components/ui/input.tsx'
-import { ApiError, apiRequest } from '../lib/api.js'
+import { useAuth } from "@/src/lib/auth/useAuth"
+import { DataTable } from "@/src/components/wip/app/data-table"
+import { DetailSidebar } from "@/src/components/wip/app/detail-sidebar"
+import { DuplicateReviewCard } from "@/src/components/wip/app/duplicate-review-card"
+import { EntityHeader } from "@/src/components/wip/app/entity-header"
+import { SaveViewDialog } from "@/src/components/wip/app/save-view-dialog"
+import { SectionHeader } from "@/src/components/wip/app/section-header"
+import { StatusBadge } from "@/src/components/wip/app/status-badge"
+import { Button } from "@/src/components/wip/layout/ui/button"
+import { Card, CardDescription, CardHeader, CardTitle } from "@/src/components/wip/layout/ui/card"
+import { Input } from "@/src/components/wip/layout/ui/input"
+import { ApiError, apiRequest } from '../lib/api'
 import {
   buildCustomSavedViewKey,
   listSavedViews,
   normalizeSavedViewLabel,
   upsertSavedView,
-} from '../lib/saved-views.ts'
-import type { Company, Contact } from '../types/entities.ts'
+} from '../lib/saved-views'
+import type { Company, Contact } from '../types/entities'
 
 type CreateContactPayload = {
   first_name: string

@@ -1,35 +1,35 @@
-import { type ComponentType, useEffect, useRef, useState } from 'react'
+import { type ComponentType, useEffect, useRef, useState } from 'react';
 import {
-  Building2,
-  ChartLine,
-  ClipboardList,
-  Handshake,
-  LayoutGrid,
-  Menu,
-  NotebookPen,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Search,
-  Settings,
-  Shield,
-  Users,
-} from 'lucide-react'
-import { Link, NavLink, Outlet, matchPath, useLocation, useNavigate } from 'react-router-dom'
-import { useAuth } from '../../auth/useAuth.js'
-import { ApiError, apiRequest } from '../../lib/api.js'
-import { cn } from '../../lib/utils.js'
-import { QuickAddDialog } from '../app/quick-add-dialog.js'
-import { Button } from '../ui/button.js'
+	Building2,
+	ChartLine,
+	ClipboardList,
+	Handshake,
+	LayoutGrid,
+	Menu,
+	NotebookPen,
+	PanelLeftClose,
+	PanelLeftOpen,
+	Search,
+	Settings,
+	Shield,
+	Users,
+} from 'lucide-react';
+import { Link, NavLink, Outlet, matchPath, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from "@/src/lib/auth/useAuth";
+import { ApiError, apiRequest } from "@/src/lib/api";
+import { cn } from "@/src/lib/utils";
+import { QuickAddDialog } from "@/src/components/wip/app/quick-add-dialog";
+import { Button } from "@/src/components/wip/layout/ui/button";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '../ui/dropdown-menu.js'
-import { Input } from '../ui/input.js'
-import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet.js'
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/src/components/wip/layout/ui/dropdown-menu";
+import { Input } from "@/src/components/wip/layout/ui/input";
+import { Sheet, SheetContent, SheetTrigger } from "@/src/components/wip/layout/ui/sheet";
 
 type NavigationItem = {
   to: string
@@ -77,7 +77,7 @@ type GlobalSearchResult = {
   route: string
 }
 
-function resolvePageTitle(pathname: string) {
+const resolvePageTitle = (pathname: string) => {
   for (const entry of PAGE_TITLES) {
     if (matchPath({ path: entry.pattern, end: true }, pathname)) {
       return entry.title
@@ -86,7 +86,7 @@ function resolvePageTitle(pathname: string) {
   return 'Workspace'
 }
 
-function resolveBreadcrumbItems(pathname: string): BreadcrumbItem[] {
+const resolveBreadcrumbItems = (pathname: string): BreadcrumbItem[] => {
   const baseCrumbs: BreadcrumbItem[] = [{ label: 'Workspace', to: '/' }]
 
   const hierarchyPatterns: Array<{
@@ -122,12 +122,18 @@ function resolveBreadcrumbItems(pathname: string): BreadcrumbItem[] {
   return [...baseCrumbs, { label: 'Workspace' }]
 }
 
-const SIDEBAR_STATE_STORAGE_KEY = 'soapcrm.sidebar_collapsed'
+const SIDEBAR_STATE_STORAGE_KEY = 'ui.sidebar_collapsed'
 const GLOBAL_SEARCH_MIN_QUERY_LENGTH = 2
 const GLOBAL_SEARCH_RESULT_LIMIT = 8
 const GLOBAL_SEARCH_DEBOUNCE_MS = 250
 
-function NavigationList({ onNavigate, collapsed = false }: { onNavigate?: () => void; collapsed?: boolean }) {
+const NavigationList = ({
+	onNavigate,
+	collapsed = false
+}: {
+		onNavigate?: () => void;
+		collapsed?: boolean
+}) => {
   return (
     <nav className="space-y-1">
       {NAVIGATION_ITEMS.map((item) => (
@@ -153,10 +159,9 @@ function NavigationList({ onNavigate, collapsed = false }: { onNavigate?: () => 
   )
 }
 
-function isTypingTarget(target: EventTarget | null) {
-  if (!(target instanceof HTMLElement)) {
+const isTypingTarget = (target: EventTarget | null) => {
+  if (!(target instanceof HTMLElement))
     return false
-  }
 
   const tagName = target.tagName.toLowerCase()
   return tagName === 'input' || tagName === 'textarea' || target.isContentEditable
@@ -165,7 +170,7 @@ function isTypingTarget(target: EventTarget | null) {
 /**
  * Global application shell with sidebar navigation and a thin context top bar.
  */
-export function PageShell() {
+export const PageShell = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, logout, token } = useAuth()
@@ -323,7 +328,7 @@ export function PageShell() {
             <div className={cn('flex items-center', isSidebarCollapsed ? 'justify-center' : 'justify-between')}>
               {!isSidebarCollapsed ? (
                 <div>
-                  <p className="text-xs font-medium text-neutral-500">SoapCRM</p>
+                  <p className="text-xs font-medium text-neutral-500">LeadsDB</p>
                   <h1 className="mt-1 text-lg font-semibold tracking-tight">Operator console</h1>
                 </div>
               ) : null}

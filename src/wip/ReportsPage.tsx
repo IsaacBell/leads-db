@@ -2,16 +2,16 @@ import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Copy, Download, Filter } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../auth/useAuth.ts'
-import { DataTable } from '../components/app/data-table.tsx'
-import { EmptyState } from '../components/app/empty-state.tsx'
-import { MetricCard } from '../components/app/metric-card.tsx'
-import { SectionHeader } from '../components/app/section-header.tsx'
-import { StatusBadge } from '../components/app/status-badge.tsx'
-import { Button } from '../components/ui/button.tsx'
-import { Card, CardDescription, CardHeader, CardTitle } from '../components/ui/card.tsx'
-import { apiRequest } from '../lib/api.js'
-import type { Company, Contact, Deal } from '../types/entities.ts'
+import { useAuth } from "@/src/lib/auth/useAuth"
+import { DataTable } from "@/src/components/wip/app/data-table"
+import { EmptyState } from "@/src/components/wip/app/empty-state"
+import { MetricCard } from "@/src/components/wip/app/metric-card"
+import { SectionHeader } from "@/src/components/wip/app/section-header"
+import { StatusBadge } from "@/src/components/wip/app/status-badge"
+import { Button } from "@/src/components/wip/layout/ui/button"
+import { Card, CardDescription, CardHeader, CardTitle } from "@/src/components/wip/layout/ui/card"
+import { apiRequest } from '@/src/lib/api'
+import type { Company, Contact, Deal } from '@/src/types/entities'
 
 type DateWindow = '30d' | '90d' | 'all'
 type StageFilter = 'all' | 'open' | 'won' | 'lost'

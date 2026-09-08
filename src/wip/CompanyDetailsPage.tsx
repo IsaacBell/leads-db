@@ -2,16 +2,16 @@ import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useAuth } from '../auth/useAuth.ts'
-import { DetailSidebar } from '../components/app/detail-sidebar.tsx'
-import { EmptyState } from '../components/app/empty-state.tsx'
-import { EntityHeader } from '../components/app/entity-header.tsx'
-import { SectionHeader } from '../components/app/section-header.tsx'
-import { StatusBadge } from '../components/app/status-badge.tsx'
-import { Button } from '../components/ui/button.tsx'
-import { Card, CardDescription, CardHeader, CardTitle } from '../components/ui/card.tsx'
-import { apiRequest } from '../lib/api.js'
-import type { Company, Contact, Deal } from '../types/entities.ts'
+import { useAuth } from "@/src/lib/auth/useAuth"
+import { DetailSidebar } from "@/src/components/wip/app/detail-sidebar"
+import { EmptyState } from "@/src/components/wip/app/empty-state"
+import { EntityHeader } from "@/src/components/wip/app/entity-header"
+import { SectionHeader } from "@/src/components/wip/app/section-header"
+import { StatusBadge } from "@/src/components/wip/app/status-badge"
+import { Button } from "@/src/components/wip/layout/ui/button"
+import { Card, CardDescription, CardHeader, CardTitle } from "@/src/components/wip/layout/ui/card"
+import { apiRequest } from '../lib/api'
+import type { Company, Contact, Deal } from '../types/entities'
 
 const EMPTY_COMPANIES: Company[] = []
 const EMPTY_CONTACTS: Contact[] = []

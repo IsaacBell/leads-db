@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { cn } from '../../lib/utils.js'
+import { cn } from "@/src/lib/utils"
 
 export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return <div className={cn('app-card rounded-2xl border p-6', className)} {...props} />

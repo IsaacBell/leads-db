@@ -1,9 +1,9 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../auth/useAuth.ts'
-import { Button } from '../components/ui/button.tsx'
-import { Card, CardDescription, CardHeader, CardTitle } from '../components/ui/card.tsx'
-import { Input } from '../components/ui/input.tsx'
+import { useAuth } from "@/src/lib/auth/useAuth"
+import { Button } from "@/src/components/wip/layout/ui/button"
+import { Card, CardDescription, CardHeader, CardTitle } from "@/src/components/wip/layout/ui/card"
+import { Input } from "@/src/components/wip/layout/ui/input"
 
 /**
  * Account creation page.
@@ -49,7 +49,7 @@ export function RegisterPage() {
     <main className="flex min-h-screen items-center justify-center bg-[#f8f8f5] px-4">
       <Card className="w-full max-w-md p-8">
         <CardHeader className="px-0 pt-0">
-          <p className="text-xs font-medium text-neutral-500">SoapCRM</p>
+          <p className="text-xs font-medium text-neutral-500">LeadsDB</p>
           <CardTitle className="text-2xl">Create account</CardTitle>
           <CardDescription>
             {mode === 'kinde' ? 'Create your account with Kinde.' : 'Create your account.'}

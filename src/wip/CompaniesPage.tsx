@@ -1,26 +1,26 @@
-import { useMemo, useState, type FormEvent } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Building2, Copy, Plus } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../auth/useAuth.ts'
-import { DataTable } from '../components/app/data-table.tsx'
-import { DetailSidebar } from '../components/app/detail-sidebar.tsx'
-import { DuplicateReviewCard } from '../components/app/duplicate-review-card.tsx'
-import { EntityHeader } from '../components/app/entity-header.tsx'
-import { SaveViewDialog } from '../components/app/save-view-dialog.tsx'
-import { SectionHeader } from '../components/app/section-header.tsx'
-import { Badge } from '@/src/components/wip/layout/ui/badge.tsx'
-import { Button } from '@/src/components/wip/layout/ui/button.tsx'
-import { Card, CardDescription, CardHeader, CardTitle } from '@/src/components/wip/layout/ui/card.tsx'
-import { Input } from '@/src/components/wip/layout/ui/input.tsx'
-import { apiRequest } from '../lib/api.js'
+import { useMemo, useState, type FormEvent } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Building2, Copy, Plus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/src/lib/auth/useAuth";
+import { DataTable } from "@/src/components/wip/app/data-table";
+import { DetailSidebar } from "@/src/components/wip/app/detail-sidebar";
+import { DuplicateReviewCard } from "@/src/components/wip/app/duplicate-review-card";
+import { EntityHeader } from "@/src/components/wip/app/entity-header";
+import { SaveViewDialog } from "@/src/components/wip/app/save-view-dialog";
+import { SectionHeader } from "@/src/components/wip/app/section-header";
+import { Badge } from "@/src/components/wip/layout/ui/badge";
+import { Button } from "@/src/components/wip/layout/ui/button";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/src/components/wip/layout/ui/card";
+import { Input } from "@/src/components/wip/layout/ui/input";
+import { apiRequest } from "@/src/lib/api";
 import {
-  buildCustomSavedViewKey,
-  listSavedViews,
-  normalizeSavedViewLabel,
-  upsertSavedView,
-} from '../lib/saved-views.ts'
-import type { Company } from '../types/entities.ts'
+	buildCustomSavedViewKey,
+	listSavedViews,
+	normalizeSavedViewLabel,
+	upsertSavedView,
+} from "@/src/lib/saved-views";
+import type { Company } from "@/src/types/entities"
 
 type CreateCompanyPayload = {
   name: string

@@ -5,8 +5,6 @@ import { encrypt } from "@/src/lib/crypto";
 
 const pool = new Pool({ connectionString: process.env.LDB_DATABASE_URL });
 
-export const dynamic = "force-dynamic";
-
 // ---- Admin token gate ----
 
 const ADMIN_TOKEN_ENV = "LEADSDB_ADMIN_TOKEN";

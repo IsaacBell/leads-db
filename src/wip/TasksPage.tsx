@@ -14,12 +14,12 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { GripVertical, Trash2 } from 'lucide-react'
-import { useAuth } from '../auth/useAuth.ts'
-import { EmptyState } from '../components/app/empty-state.tsx'
-import { SectionHeader } from '../components/app/section-header.tsx'
-import { StatusBadge } from '../components/app/status-badge.tsx'
-import { Button } from '../components/ui/button.tsx'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card.tsx'
+import { useAuth } from "@/src/lib/auth/useAuth"
+import { EmptyState } from "@/src/components/wip/app/empty-state"
+import { SectionHeader } from "@/src/components/wip/app/section-header"
+import { StatusBadge } from "@/src/components/wip/app/status-badge"
+import { Button } from "@/src/components/wip/layout/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/wip/layout/ui/card"
 import {
   ContextMenu,
   ContextMenuContent,
@@ -27,11 +27,11 @@ import {
   ContextMenuLabel,
   ContextMenuSeparator,
   ContextMenuTrigger,
-} from '../components/ui/context-menu.tsx'
-import { Input } from '../components/ui/input.tsx'
-import { Textarea } from '../components/ui/textarea.tsx'
-import { apiRequest } from '../lib/api.js'
-import type { Task } from '../types/entities.ts'
+} from "@/src/components/wip/layout/ui/context-menu"
+import { Input } from "@/src/components/wip/layout/ui/input"
+import { Textarea } from "@/src/components/wip/layout/ui/textarea"
+import { apiRequest } from '../lib/api'
+import type { Task } from '../types/entities'
 
 type CreateTaskPayload = {
   title: string

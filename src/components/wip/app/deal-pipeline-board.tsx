@@ -13,7 +13,7 @@ import {
 } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import { GripVertical, MoreHorizontal } from 'lucide-react'
-import type { Deal } from '../../types/entities.js'
+import type { Deal } from "@/src/types/entities"
 import { Badge } from '../layout/ui/badge.js'
 import { Button } from '../layout/ui/button.js'
 import {

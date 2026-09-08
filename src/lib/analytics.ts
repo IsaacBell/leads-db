@@ -1,5 +1,5 @@
 /* WIP - may move to matomo */
-import type { User } from '../types/auth.ts'
+import type { User } from "@/src/types/auth";
 
 type RuntimeProfile = 'minimal' | 'analytics-only' | 'observability-only' | 'full-stack'
 type AnalyticsProvider = 'posthog'
@@ -28,8 +28,8 @@ type PostHogEventPayload = {
   timestamp: string
 }
 
-const ANALYTICS_CONSENT_KEY = 'soapcrm.analytics.cookies_consent'
-const ANALYTICS_ANON_ID_KEY = 'soapcrm.analytics.anon_id'
+const ANALYTICS_CONSENT_KEY = 'analytics.cookies_consent'
+const ANALYTICS_ANON_ID_KEY = 'analytics.anon_id'
 const DEFAULT_POSTHOG_HOST = 'https://us.i.posthog.com'
 const POSTHOG_PROJECT_TOKEN = import.meta.env.VITE_POSTHOG_PROJECT_TOKEN?.trim()
 const POSTHOG_HOST = (import.meta.env.VITE_POSTHOG_HOST?.trim() || DEFAULT_POSTHOG_HOST).replace(/\/$/, '')
@@ -116,7 +116,7 @@ function buildEventPayload(
     distinct_id: distinctId,
     properties: normalizeProperties({
       ...properties,
-      $lib: 'soapcrm-frontend',
+      $lib: 'ldb-frontend',
       runtime_profile: PROFILE,
     }),
     timestamp: new Date().toISOString(),

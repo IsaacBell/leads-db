@@ -1,6 +1,6 @@
 import { Navigate, Outlet } from 'react-router-dom'
-import { Card } from '../components/ui/card.js'
-import { useAuth } from './useAuth.js'
+import { Card } from '@/src/components/wip/layout/ui/card'
+import { useAuth } from './useAuth'
 
 /**
  * Gate that ensures authenticated access to the operator shell routes.

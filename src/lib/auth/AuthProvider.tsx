@@ -7,21 +7,21 @@ import {
 } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useKindeAuth } from '@kinde-oss/kinde-auth-react'
-import { apiRequest } from '../lib/api.js'
+import { apiRequest } from '../api'
 import {
   captureAnalyticsEvent,
   identifyAnalyticsUser,
   resetAnalyticsIdentity,
-} from '../lib/analytics.js'
-import type { AuthResponse, User } from '../types/auth.js'
+} from '../analytics'
+import type { AuthResponse, User } from '../../types/auth'
 import {
   AuthContext,
   type AuthContextValue,
   type LoginPayload,
   type RegisterPayload,
-} from './AuthContext.js'
+} from './AuthContext'
 
-const TOKEN_STORAGE_KEY = 'soapcrm.auth_token'
+const TOKEN_STORAGE_KEY = 'core.auth_token'
 const KINDE_CLIENT_ID = import.meta.env.VITE_KINDE_CLIENT_ID?.trim()
 const KINDE_DOMAIN = import.meta.env.VITE_KINDE_DOMAIN?.trim()
 const KINDE_ENABLED = Boolean(KINDE_CLIENT_ID && KINDE_DOMAIN)

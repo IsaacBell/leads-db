@@ -1,5 +1,5 @@
 /* WIP */
-import { captureAnalyticsEvent } from './analytics.js'
+import { captureAnalyticsEvent } from "@/src/lib/analytics";
 
 const DEFAULT_API_BASE_URL = 'http://localhost:3000'
 

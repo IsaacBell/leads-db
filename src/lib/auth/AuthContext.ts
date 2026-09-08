@@ -1,5 +1,5 @@
 import { createContext } from 'react'
-import type { User } from '../types/auth.js'
+import type { User } from '../../types/auth'
 
 export type LoginPayload = {
   email: string

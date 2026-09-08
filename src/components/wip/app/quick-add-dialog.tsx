@@ -2,22 +2,22 @@ import { useMemo, useState, type FormEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Plus } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { useAuth } from '../../auth/useAuth.js'
-import { apiRequest } from '../../lib/api.js'
-import type { Company, Contact, Deal } from '../../types/entities.js'
-import { Button } from '../layout/ui/button.js'
+import { useAuth } from "@/src/lib/auth/useAuth"
+import { apiRequest } from "@/src/lib/api"
+import type { Company, Contact, Deal } from "@/src/types/entities"
+import { Button } from "@/src/components/wip/layout/ui/button"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '../layout/ui/dialog.js'
-import { Input } from '../layout/ui/input.js'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../layout/ui/tabs.js'
-import { Textarea } from '../layout/ui/textarea.js'
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from "@/src/components/wip/layout/ui/dialog"
+import { Input } from "@/src/components/wip/layout/ui/input"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/wip/layout/ui/tabs"
+import { Textarea } from "@/src/components/wip/layout/ui/textarea"
 
 type QuickAddTab = 'contact' | 'deal' | 'task'
 
@@ -49,8 +49,8 @@ type InlineCompanyTarget = 'contact' | 'deal'
 
 const EMPTY_COMPANIES: Company[] = []
 const EMPTY_CONTACTS: Contact[] = []
-const QUICK_ADD_LAST_COMPANY_KEY = 'soapcrm.quick_add.last_company_id'
-const QUICK_ADD_LAST_CONTACT_KEY = 'soapcrm.quick_add.last_contact_id'
+const QUICK_ADD_LAST_COMPANY_KEY = 'core.quick_add.last_company_id'
+const QUICK_ADD_LAST_CONTACT_KEY = 'core.quick_add.last_contact_id'
 
 /**
  * Lightweight modal for creating common records without navigating away.

@@ -30,16 +30,17 @@ describe("libs/crypto", () => {
       expect(mod.isAvailable()).toBe(false);
     });
 
-    it("returns false when key is malformed (not base64url)", async () => {
+    it("throws when key is malformed", async () => {
       process.env[KEY_ENV] = "!!!not-base64!!!";
       const mod = await import("@/src/lib/crypto");
-      expect(mod.isAvailable()).toBe(false);
+      // A present-but-invalid key is a config error: fail loudly, do not silently degrade.
+      expect(() => mod.isAvailable()).toThrow(KEY_ENV);
     });
 
-    it("returns false when key is wrong length", async () => {
+    it("throws when key is wrong length", async () => {
       process.env[KEY_ENV] = Buffer.from("too-short").toString("base64url");
       const mod = await import("@/src/lib/crypto");
-      expect(mod.isAvailable()).toBe(false);
+      expect(() => mod.isAvailable()).toThrow("decode to 32 bytes");
     });
   });
 
@@ -95,10 +96,10 @@ describe("libs/crypto", () => {
       expect(() => mod.decrypt(Buffer.from("not-a-valid-token"))).toThrow();
     });
 
-    it("decrypt rejects non-Buffer", async () => {
+    it("decrypt rejects non-Buffer (or malformed-short) input", async () => {
       setMasterKey();
       const mod = await import("@/src/lib/crypto");
-      expect(() => mod.decrypt("string-not-buffer" as unknown as Buffer)).toThrow("must be a Buffer");
+      expect(() => mod.decrypt("nope" as unknown as Buffer)).toThrow();
     });
   });
 
