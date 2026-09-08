@@ -1,5 +1,12 @@
 default_provider = "age"
 
+[tools]
+node = "lts"
+pnpm = "lts"
+
+[profiles.staging.tools]
+semgrep = "lts"
+
 [providers.age]
 type = "age"
 recipients = ["age1wdtap0ucqfxuucpreq64p8wqyjetl02xjy05w70kmrke2y9fjvlspulrrp"] # public recipient
@@ -8,6 +15,7 @@ recipients = ["age1wdtap0ucqfxuucpreq64p8wqyjetl02xjy05w70kmrke2y9fjvlspulrrp"] 
 type = "infisical"
 project_id = "90700f81-c94e-4eb5-bf69-f52d814e96de"
 environment = "Development"
+path = "/leads-db"
 
 [profiles.staging.providers]
 infisical = { type = "infisical", project_id = "90700f81-c94e-4eb5-bf69-f52d814e96de", environment = "Staging", path = "/leads-db" }
