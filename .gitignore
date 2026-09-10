@@ -30,7 +30,6 @@ yarn-error.log*
 
 # local env files
 .env*.local
-.env*
 !.env.example
 
 # local secret-bearing config (contains age/fido-encrypted Infisical token)
@@ -52,7 +51,6 @@ temp/*
 
 *service_account.json
 config.bat
-.env*
 
 # Sentry Config File
 .env.sentry-build-plugin

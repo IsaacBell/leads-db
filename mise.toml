@@ -1,6 +1,6 @@
 [tools]
 node = "24"
-rust = "latest"
+rust = "1.98.1"
 python = "3.12.14"
 pnpm = "10.34.5"
 uv = "0.12.10"
