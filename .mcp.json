@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "context7": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp"
+      ],
+      "env": {}
+    },
+    "Sentry": {
+      "url": "https://mcp.sentry.dev/mcp/isaac-bell-3a/javascript-nextjs-nm"
+    }
+  }
+}

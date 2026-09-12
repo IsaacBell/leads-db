@@ -1,1 +1,0 @@
-from .pinecone import Pinecone

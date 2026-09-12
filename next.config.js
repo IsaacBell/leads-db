@@ -1,23 +1,23 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {
-  webpack: (config) => {
-    // this will override the experiments
-    config.experiments = { ...config.experiments, topLevelAwait: true };
-    // this will just update topLevelAwait property of config.experiments
-    // config.experiments.topLevelAwait = true 
-    return config;
-  },
-  rewrites: async () => {
-    return [
-      {
-        source: '/api/:path*',
-        destination:
-          process.env.NODE_ENV === 'development'
-            ? 'http://127.0.0.1:5328/api/:path*'
-            : '/api/',
-      },
-    ]
-  },
-}
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+import { withSentryConfig } from "@sentry/nextjs/config";
 
-module.exports = nextConfig
+const projectRoot = path.dirname(fileURLToPath(import.meta.url));
+
+const nextConfig = {
+  cacheComponents: true,
+  partialPrefetching: true,
+  turbopack: {
+    root: projectRoot,
+  },
+  experimental: {
+    useOffline: true,
+  },
+};
+
+export default withSentryConfig(nextConfig, {
+  org: "isaac-bell-3a",
+  project: "leads-db",
+  silent: !process.env.CI,
+});
