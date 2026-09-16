@@ -7,6 +7,10 @@
 
 # testing
 /coverage
+htmlcov/
+.coverage
+__pycache__/
+.pytest_cache/
 
 # next.js
 /.next/
@@ -26,6 +30,11 @@ yarn-error.log*
 
 # local env files
 .env*.local
+!.env.example
+
+# local secret-bearing config (contains age/fido-encrypted Infisical token)
+fnox.toml
+.mise.local.toml
 
 # vercel
 .vercel
@@ -34,9 +43,14 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 __pycache__
+*.pyc
+.venv/
 
 tmp/*
 temp/*
 
 *service_account.json
 config.bat
+
+# Sentry Config File
+.env.sentry-build-plugin

@@ -1,0 +1,99 @@
+:root {
+  --font-sans:
+    "IBM Plex Sans",
+    "Inter",
+    "Segoe UI",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Helvetica Neue",
+    sans-serif;
+
+  --surface-canvas: #f7f7f3;
+  --surface-sidebar: #f9f9f6;
+  --surface-card: #ffffff;
+  --surface-elevated: #ffffff;
+
+  --border-default: #e5e5e2;
+  --border-strong: #d5d5cf;
+
+  --text-primary: #111111;
+  --text-secondary: #525252;
+  --text-muted: #737373;
+
+  --accent-50: #ecfdf5;
+  --accent-200: #a7f3d0;
+  --accent-500: #10b981;
+  --accent-600: #059669;
+  --accent-700: #047857;
+  --accent-800: #065f46;
+
+  --state-danger-50: #fff1f2;
+  --state-danger-200: #fecdd3;
+  --state-danger-700: #be123c;
+
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+  --shadow-overlay: 0 12px 30px -12px rgba(0, 0, 0, 0.22);
+
+  --motion-fast: 140ms;
+  --motion-base: 180ms;
+  --easing-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+:root[data-theme="medical"] {
+  --surface-canvas: #f4f8fa;
+  --surface-sidebar: #edf5f8;
+  --accent-50: #effaf8;
+  --accent-200: #9adbcf;
+  --accent-500: #2aa58f;
+  --accent-600: #1f8f7c;
+  --accent-700: #196f61;
+  --accent-800: #14544b;
+}
+
+:root[data-theme="tech"] {
+  --surface-canvas: #f3f6fb;
+  --surface-sidebar: #ebf0f8;
+  --accent-50: #ecf4ff;
+  --accent-200: #9fc5ff;
+  --accent-500: #2f6fed;
+  --accent-600: #255bc7;
+  --accent-700: #1f4b9f;
+  --accent-800: #183977;
+}
+
+:root[data-theme="corporate"] {
+  --surface-canvas: #f6f7f9;
+  --surface-sidebar: #eef1f5;
+  --accent-50: #f2f5ff;
+  --accent-200: #b4c3ef;
+  --accent-500: #3f5fa6;
+  --accent-600: #354f8a;
+  --accent-700: #2e4473;
+  --accent-800: #25365a;
+}
+
+:root[data-theme="creator"] {
+  --surface-canvas: #faf6f1;
+  --surface-sidebar: #f7efe4;
+  --accent-50: #fff6e8;
+  --accent-200: #f4bf77;
+  --accent-500: #d7802f;
+  --accent-600: #b96b22;
+  --accent-700: #96541b;
+  --accent-800: #743f15;
+}
+
+:root[data-theme="designer"] {
+  --surface-canvas: #f7f6fa;
+  --surface-sidebar: #f0eef6;
+  --accent-50: #f5f1ff;
+  --accent-200: #ccb8f4;
+  --accent-500: #7a66c7;
+  --accent-600: #6552ae;
+  --accent-700: #524490;
+  --accent-800: #40336f;
+}

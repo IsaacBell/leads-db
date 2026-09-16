@@ -1,0 +1,2924 @@
+{
+  "metadata": {
+    "repository": "IsaacBell/leads-db",
+    "branch": "feat/v2",
+    "analysis_date": "Sep 1, 2026, 12:09 AM",
+    "scan_summary": {
+      "files_included": "",
+      "files_excluded": "",
+      "lines_analyzed": "9803"
+    }
+  },
+  "summary": {
+    "sast": {
+      "total_issues": 2,
+      "false_positives": 6,
+      "severity_distribution": {
+        "HIGH": 1,
+        "MEDIUM": 0,
+        "LOW": 0
+      }
+    },
+    "secrets": {
+      "total_detected": 2,
+      "confidence_distribution": {
+        "HIGH": 2,
+        "MEDIUM": 0,
+        "LOW": 0
+      }
+    },
+    "sca": {
+      "total_vulnerabilities": 45,
+      "severity_distribution": {
+        "CRITICAL": 2,
+        "HIGH": 17,
+        "MEDIUM": 20,
+        "LOW": 6,
+        "UNKNOWN": 0
+      },
+      "healthy_packages_scanned": 109
+    },
+    "antipatterns": {
+      "total_issues": 76
+    },
+    "complex_functions": {
+      "total_complex_functions": 6
+    },
+    "docstrings_absent": {
+      "total_missing": 51
+    },
+    "duplicate_code": {
+      "total_groups": 2
+    },
+    "dead_code": {
+      "total_issues": 16
+    },
+    "sbom": {
+      "total_components": 115,
+      "permissive": 49,
+      "non_permissive": 66
+    }
+  },
+  "results": {
+    "sast": [
+      {
+        "title": "Found 'subprocess' function 'run' with 'shell=True'. This is dangerous because this call will spawn the command using a shell process. Doing so propagates current shell settings and variables, which makes it much easier for a malicious actor to execute commands. Use 'shell=False' instead.",
+        "description": "Found 'subprocess' function 'run' with 'shell=True'. This is dangerous because this call will spawn the command using a shell process. Doing so propagates current shell settings and variables, which makes it much easier for a malicious actor to execute commands. Use 'shell=False' instead.",
+        "file_path": "(internal)/daily_merge.py",
+        "line_number": 42,
+        "severity": "CRITICAL",
+        "cwe": [
+          "CWE-78: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+        ],
+        "owasp": [
+          "A01:2017 - Injection",
+          "A03:2021 - Injection",
+          "A05:2025 - Injection"
+        ],
+        "epss_score": "1.80%",
+        "epss_percentile": "76.94%"
+      },
+      {
+        "title": "Sensitive data is being stored in plaintext browser or app local storage. localStorage and sessionStorage data can be accessed by XSS attacks or browser extensions. Use secure server-side sessions or encrypted storage for sensitive data.",
+        "description": "Sensitive data is being stored in plaintext browser or app local storage. localStorage and sessionStorage data can be accessed by XSS attacks or browser extensions. Use secure server-side sessions or encrypted storage for sensitive data.",
+        "file_path": "app/settings/page.tsx",
+        "line_number": 178,
+        "severity": "HIGH",
+        "cwe": [
+          "CWE-922: Insecure Storage of Sensitive Information"
+        ],
+        "owasp": [
+          "M9:2024 - Insecure Data Storage"
+        ],
+        "epss_score": "0.58%",
+        "epss_percentile": "45.48%"
+      }
+    ],
+    "sast_false_positives": [
+      {
+        "title": "Use of SHA1 hash algorithm detected. SHA1 is cryptographically weak and should not be used for security purposes such as digital signatures or integrity verification. Use a stronger algorithm like SHA-256 or SHA-3.",
+        "description": "Use of SHA1 hash algorithm detected. SHA1 is cryptographically weak and should not be used for security purposes such as digital signatures or integrity verification. Use a stronger algorithm like SHA-256 or SHA-3.",
+        "file_path": "engine/leadsdb_engine/processors/certstream_ingestor.py",
+        "line_number": 75,
+        "severity": "CRITICAL",
+        "cwe": [
+          "CWE-328: Use of Weak Hash"
+        ],
+        "owasp": [
+          "A02:2021 - Cryptographic Failures"
+        ],
+        "epss_score": "9.93%",
+        "epss_percentile": "95.25%",
+        "false_positive_reasoning": "SHA-1 is used only for a non-security idempotency fingerprint, so the reported cryptographic weakness does not represent a genuine security vulnerability."
+      },
+      {
+        "title": "Use of SHA1 hash algorithm detected. SHA1 is cryptographically weak and should not be used for security purposes such as digital signatures or integrity verification. Use a stronger algorithm like SHA-256 or SHA-3.",
+        "description": "Use of SHA1 hash algorithm detected. SHA1 is cryptographically weak and should not be used for security purposes such as digital signatures or integrity verification. Use a stronger algorithm like SHA-256 or SHA-3.",
+        "file_path": "engine/tests/test_processor_fixes.py",
+        "line_number": 38,
+        "severity": "CRITICAL",
+        "cwe": [
+          "CWE-328: Use of Weak Hash"
+        ],
+        "owasp": [
+          "A02:2021 - Cryptographic Failures"
+        ],
+        "epss_score": "9.93%",
+        "epss_percentile": "95.25%",
+        "false_positive_reasoning": "SHA1 is used only for a non-security deterministic fingerprint in test code, so the reported cryptographic weakness is not an exploitable application vulnerability."
+      },
+      {
+        "title": "Sensitive data such as passwords, tokens, API keys, or credit card numbers is being written to application logs. This can expose credentials and PII to anyone with access to log files, violating CWE-532. Use structured logging with sensitive field redaction, or mask values before logging.",
+        "description": "Sensitive data such as passwords, tokens, API keys, or credit card numbers is being written to application logs. This can expose credentials and PII to anyone with access to log files, violating CWE-532. Use structured logging with sensitive field redaction, or mask values before logging.",
+        "file_path": "app/api/v1/settings/secrets/route.ts",
+        "line_number": 72,
+        "severity": "LOW",
+        "cwe": [
+          "CWE-532: Insertion of Sensitive Information into Log File"
+        ],
+        "owasp": [
+          "A09:2021 - Security Logging and Monitoring Failures"
+        ],
+        "epss_score": "0.16%",
+        "epss_percentile": "5.80%",
+        "false_positive_reasoning": "The log records an error message and a static status string, not the sensitive secret value, so CWE-532 is not demonstrated."
+      },
+      {
+        "title": "The call to 'createDecipheriv' with the Galois Counter Mode (GCM) mode of operation is missing an expected authentication tag length. If the expected authentication tag length is not specified or otherwise checked, the application might be tricked into verifying a shorter-than-expected authentication tag. This can be abused by an attacker to spoof ciphertexts or recover the implicit authentication key of GCM, allowing arbitrary forgeries.",
+        "description": "The call to 'createDecipheriv' with the Galois Counter Mode (GCM) mode of operation is missing an expected authentication tag length. If the expected authentication tag length is not specified or otherwise checked, the application might be tricked into verifying a shorter-than-expected authentication tag. This can be abused by an attacker to spoof ciphertexts or recover the implicit authentication key of GCM, allowing arbitrary forgeries.",
+        "file_path": "libs/crypto.ts",
+        "line_number": 125,
+        "severity": "MEDIUM",
+        "cwe": [
+          "CWE-310: CWE CATEGORY: Cryptographic Issues"
+        ],
+        "owasp": [
+          "A02:2021 - Cryptographic Failures",
+          "A04:2025 - Cryptographic Failures"
+        ],
+        "epss_score": "-",
+        "epss_percentile": "-",
+        "false_positive_reasoning": "The code enforces a 16-byte GCM tag through fixed-length extraction and input validation, while Node.js defaults GCM authentication to 16 bytes."
+      },
+      {
+        "title": "Dynamic code execution using eval(), Function(), setTimeout(string), or setInterval(string) with potentially untrusted data. This can lead to arbitrary code execution. Avoid evaluating user-controlled strings as code.",
+        "description": "Dynamic code execution using eval(), Function(), setTimeout(string), or setInterval(string) with potentially untrusted data. This can lead to arbitrary code execution. Avoid evaluating user-controlled strings as code.",
+        "file_path": "app/settings/page.tsx",
+        "line_number": 66,
+        "severity": "CRITICAL",
+        "cwe": [
+          "CWE-94: Improper Control of Generation of Code ('Code Injection')"
+        ],
+        "owasp": [
+          "A03:2021 - Injection"
+        ],
+        "epss_score": "100.00%",
+        "epss_percentile": "100.00%",
+        "false_positive_reasoning": "setTimeout receives a callback function rather than an evaluable string, so it cannot execute attacker-controlled code."
+      },
+      {
+        "title": "Avoiding SQL string concatenation: untrusted input concatenated with raw SQL query can result in SQL Injection. In order to execute raw query safely, prepared statement should be used. SQLAlchemy provides TextualSQL to easily used prepared statement with named parameters. For complex SQL composition, use SQL Expression Language or Schema Definition Language. In most cases, SQLAlchemy ORM will be a better option.",
+        "description": "Avoiding SQL string concatenation: untrusted input concatenated with raw SQL query can result in SQL Injection. In order to execute raw query safely, prepared statement should be used. SQLAlchemy provides TextualSQL to easily used prepared statement with named parameters. For complex SQL composition, use SQL Expression Language or Schema Definition Language. In most cases, SQLAlchemy ORM will be a better option.",
+        "file_path": "engine/leadsdb_engine/processors/entity_scorer.py",
+        "line_number": 215,
+        "severity": "HIGH",
+        "cwe": [
+          "CWE-89: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')"
+        ],
+        "owasp": [
+          "A01:2017 - Injection",
+          "A03:2021 - Injection",
+          "A05:2025 - Injection"
+        ],
+        "epss_score": "-",
+        "epss_percentile": "-",
+        "false_positive_reasoning": "The f-string inserts only a fixed SQL fragment, while all dynamic values are passed through parameterized query arguments."
+      }
+    ],
+    "secrets": [
+      {
+        "type": "Private Key",
+        "file_path": ".env.example",
+        "line_number": 30,
+        "confidence": "HIGH"
+      },
+      {
+        "type": "JSON Web Token",
+        "file_path": "client.conf",
+        "line_number": 7,
+        "confidence": "HIGH"
+      }
+    ],
+    "sca": [
+      {
+        "vulnerability_id": "CVE-2025-29927",
+        "package_name": "next",
+        "current_version": "13.4.3",
+        "severity": "Critical",
+        "cvss_score": 9.1,
+        "description": "Authorization Bypass in Next.js Middleware",
+        "fixed_version": "13.5.9",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "CVE-2026-47429",
+        "package_name": "vitest",
+        "current_version": "2.1.9",
+        "severity": "Critical",
+        "cvss_score": 9.8,
+        "description": "When Vitest UI server is listening, arbitrary file can be read and executed",
+        "fixed_version": "3.2.6",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "CVE-2026-41066",
+        "package_name": "lxml",
+        "current_version": "5.1",
+        "severity": "High",
+        "cvss_score": 7.5,
+        "description": "lxml: Default configuration of iterparse() and ETCompatXMLParser() allows XXE to local files",
+        "fixed_version": "6.1.0",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "CVE-2026-69249",
+        "package_name": "cryptography",
+        "current_version": "42.0",
+        "severity": "High",
+        "cvss_score": 0,
+        "description": "python-cryptography: Duplicate self-signed intermediates can cause exponential path-building",
+        "fixed_version": "49.0.0",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "CVE-2026-26007",
+        "package_name": "cryptography",
+        "current_version": "42.0",
+        "severity": "High",
+        "cvss_score": 0,
+        "description": "cryptography Vulnerable to a Subgroup Attack Due to Missing Subgroup Validation for SECT Curves",
+        "fixed_version": "46.0.5",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "CVE-2024-26130",
+        "package_name": "cryptography",
+        "current_version": "42.0",
+        "severity": "High",
+        "cvss_score": 7.5,
+        "description": "cryptography NULL pointer dereference with pkcs12.serialize_key_and_certificates when called with a non-matching certificate and private key and an hmac_hash override",
+        "fixed_version": "42.0.4",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "GHSA-537c-gmf6-5ccf",
+        "package_name": "cryptography",
+        "current_version": "42.0",
+        "severity": "High",
+        "cvss_score": 7.5,
+        "description": "Vulnerable OpenSSL included in cryptography wheels",
+        "fixed_version": "48.0.1",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "CVE-2026-64645",
+        "package_name": "next",
+        "current_version": "13.4.3",
+        "severity": "High",
+        "cvss_score": 0,
+        "description": "Next.js: Server-Side Request Forgery in rewrites via attacker-controlled destination hostname",
+        "fixed_version": "15.5.21",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "CVE-2026-64641",
+        "package_name": "next",
+        "current_version": "13.4.3",
+        "severity": "High",
+        "cvss_score": 0,
+        "description": "Next.js: Denial of Service in App Router using Server Actions",
+        "fixed_version": "15.5.21",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "CVE-2026-44573",
+        "package_name": "next",
+        "current_version": "13.4.3",
+        "severity": "High",
+        "cvss_score": 7.5,
+        "description": "Next.js has a Middleware / Proxy bypass in Pages Router applications using i18n",
+        "fixed_version": "15.5.16",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "CVE-2024-51479",
+        "package_name": "next",
+        "current_version": "13.4.3",
+        "severity": "High",
+        "cvss_score": 7.5,
+        "description": "Next.js authorization bypass vulnerability",
+        "fixed_version": "14.2.15",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "CVE-2024-39693",
+        "package_name": "next",
+        "current_version": "13.4.3",
+        "severity": "High",
+        "cvss_score": 7.5,
+        "description": "Next.js Denial of Service (DoS) condition",
+        "fixed_version": "13.5.0",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "CVE-2024-34351",
+        "package_name": "next",
+        "current_version": "13.4.3",
+        "severity": "High",
+        "cvss_score": 7.5,
+        "description": "Next.js Server-Side Request Forgery in Server Actions",
+        "fixed_version": "14.1.1",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "CVE-2024-34350",
+        "package_name": "next",
+        "current_version": "13.4.3",
+        "severity": "High",
+        "cvss_score": 7.5,
+        "description": "Next.js Vulnerable to HTTP Request Smuggling",
+        "fixed_version": "13.5.1",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "GHSA-8h8q-6873-q5fj",
+        "package_name": "next",
+        "current_version": "13.4.3",
+        "severity": "High",
+        "cvss_score": 7.5,
+        "description": "Next.js Vulnerable to Denial of Service with Server Components",
+        "fixed_version": "15.5.16",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "GHSA-q4gf-8mx6-v5v3",
+        "package_name": "next",
+        "current_version": "13.4.3",
+        "severity": "High",
+        "cvss_score": 7.5,
+        "description": "Next.js has a Denial of Service with Server Components",
+        "fixed_version": "15.5.15",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "GHSA-h25m-26qc-wcjf",
+        "package_name": "next",
+        "current_version": "13.4.3",
+        "severity": "High",
+        "cvss_score": 7.5,
+        "description": "Next.js HTTP request deserialization can lead to DoS when using insecure React Server Components",
+        "fixed_version": "15.0.8",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "GHSA-5j59-xgg2-r9c4",
+        "package_name": "next",
+        "current_version": "13.4.3",
+        "severity": "High",
+        "cvss_score": 7.5,
+        "description": "Next has a Denial of Service with Server Components - Incomplete Fix Follow-Up",
+        "fixed_version": "14.2.35",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "GHSA-mwv6-3258-q52c",
+        "package_name": "next",
+        "current_version": "13.4.3",
+        "severity": "High",
+        "cvss_score": 7.5,
+        "description": "Next Vulnerable to Denial of Service with Server Components",
+        "fixed_version": "14.2.34",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "CVE-2024-3772",
+        "package_name": "pydantic",
+        "current_version": "2.0",
+        "severity": "Medium",
+        "cvss_score": 5.9,
+        "description": "Pydantic regular expression denial of service",
+        "fixed_version": "2.4.0",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "CVE-2026-69248",
+        "package_name": "cryptography",
+        "current_version": "42.0",
+        "severity": "Medium",
+        "cvss_score": 0,
+        "description": "python-cryptography verifier accepts wildcard DNS names allowing escape from permittedSubtrees",
+        "fixed_version": "49.0.0",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "CVE-2024-0727",
+        "package_name": "cryptography",
+        "current_version": "42.0",
+        "severity": "Medium",
+        "cvss_score": 5.5,
+        "description": "Null pointer dereference in PKCS12 parsing",
+        "fixed_version": "42.0.2",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "GHSA-h4gh-qq45-vh27",
+        "package_name": "cryptography",
+        "current_version": "42.0",
+        "severity": "Medium",
+        "cvss_score": 0,
+        "description": "pyca/cryptography has a vulnerable OpenSSL included in cryptography wheels",
+        "fixed_version": "43.0.1",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "CVE-2025-71176",
+        "package_name": "pytest",
+        "current_version": "8.0",
+        "severity": "Medium",
+        "cvss_score": 6.8,
+        "description": "pytest has vulnerable tmpdir handling",
+        "fixed_version": "9.0.3",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "CVE-2026-64648",
+        "package_name": "next",
+        "current_version": "13.4.3",
+        "severity": "Medium",
+        "cvss_score": 0,
+        "description": "Next.js: Cache confusion of response bodies for requests with bodies",
+        "fixed_version": "15.5.21",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "CVE-2026-64647",
+        "package_name": "next",
+        "current_version": "13.4.3",
+        "severity": "Medium",
+        "cvss_score": 0,
+        "description": "Next.js: Cache confusion of response bodies for requests with bodies containing invalid UTF-8 byte sequences",
+        "fixed_version": "15.5.21",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "CVE-2026-64646",
+        "package_name": "next",
+        "current_version": "13.4.3",
+        "severity": "Medium",
+        "cvss_score": 0,
+        "description": "Next.js: Unbounded Server Action payload in Edge runtime",
+        "fixed_version": "15.5.21",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "CVE-2026-64643",
+        "package_name": "next",
+        "current_version": "13.4.3",
+        "severity": "Medium",
+        "cvss_score": 0,
+        "description": "Next.js: Unauthenticated disclosure of internal Server Function endpoints",
+        "fixed_version": "15.5.21",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "CVE-2026-44581",
+        "package_name": "next",
+        "current_version": "13.4.3",
+        "severity": "Medium",
+        "cvss_score": 4.7,
+        "description": "Next.js vulnerable to cross-site scripting in App Router applications using CSP nonces",
+        "fixed_version": "15.5.16",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "CVE-2026-44580",
+        "package_name": "next",
+        "current_version": "13.4.3",
+        "severity": "Medium",
+        "cvss_score": 6.1,
+        "description": "Next.js has cross-site scripting in beforeInteractive scripts with untrusted input",
+        "fixed_version": "15.5.16",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "CVE-2026-44577",
+        "package_name": "next",
+        "current_version": "13.4.3",
+        "severity": "Medium",
+        "cvss_score": 5.9,
+        "description": "Next.js has a Denial of Service in the Image Optimization API",
+        "fixed_version": "15.5.16",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "CVE-2026-27980",
+        "package_name": "next",
+        "current_version": "13.4.3",
+        "severity": "Medium",
+        "cvss_score": 0,
+        "description": "Next.js: Unbounded next/image disk cache growth can exhaust storage",
+        "fixed_version": "15.5.14",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "CVE-2026-29057",
+        "package_name": "next",
+        "current_version": "13.4.3",
+        "severity": "Medium",
+        "cvss_score": 0,
+        "description": "Next.js: HTTP request smuggling in rewrites",
+        "fixed_version": "15.5.13",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "CVE-2025-59471",
+        "package_name": "next",
+        "current_version": "13.4.3",
+        "severity": "Medium",
+        "cvss_score": 5.9,
+        "description": "Next.js self-hosted applications vulnerable to DoS via Image Optimizer remotePatterns configuration",
+        "fixed_version": "15.5.10",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "CVE-2025-57822",
+        "package_name": "next",
+        "current_version": "13.4.3",
+        "severity": "Medium",
+        "cvss_score": 6.5,
+        "description": "Next.js Improper Middleware Redirect Handling Leads to SSRF",
+        "fixed_version": "14.2.32",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "CVE-2025-55173",
+        "package_name": "next",
+        "current_version": "13.4.3",
+        "severity": "Medium",
+        "cvss_score": 4.3,
+        "description": "Next.js Content Injection Vulnerability for Image Optimization",
+        "fixed_version": "14.2.31",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "CVE-2025-57752",
+        "package_name": "next",
+        "current_version": "13.4.3",
+        "severity": "Medium",
+        "cvss_score": 6.2,
+        "description": "Next.js Affected by Cache Key Confusion for Image Optimization API Routes",
+        "fixed_version": "14.2.31",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "CVE-2024-56332",
+        "package_name": "next",
+        "current_version": "13.4.3",
+        "severity": "Medium",
+        "cvss_score": 5.3,
+        "description": "Next.js Allows a Denial of Service (DoS) with Server Actions",
+        "fixed_version": "13.5.8",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "CVE-2024-47831",
+        "package_name": "next",
+        "current_version": "13.4.3",
+        "severity": "Medium",
+        "cvss_score": 5.9,
+        "description": "Denial of Service condition in Next.js image optimization",
+        "fixed_version": "14.2.7",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "CVE-2026-34073",
+        "package_name": "cryptography",
+        "current_version": "42.0",
+        "severity": "Low",
+        "cvss_score": 5.3,
+        "description": "cryptography has incomplete DNS name constraint enforcement on peer names",
+        "fixed_version": "46.0.6",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "CVE-2024-12797",
+        "package_name": "cryptography",
+        "current_version": "42.0",
+        "severity": "Low",
+        "cvss_score": 0,
+        "description": "Vulnerable OpenSSL included in cryptography wheels",
+        "fixed_version": "44.0.1",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "CVE-2026-44572",
+        "package_name": "next",
+        "current_version": "13.4.3",
+        "severity": "Low",
+        "cvss_score": 3.7,
+        "description": "Next.js's Middleware / Proxy redirects can be cache-poisoned",
+        "fixed_version": "15.5.16",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "CVE-2025-32421",
+        "package_name": "next",
+        "current_version": "13.4.3",
+        "severity": "Low",
+        "cvss_score": 3.7,
+        "description": "Next.js Race Condition to Cache Poisoning",
+        "fixed_version": "14.2.24",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "CVE-2025-48068",
+        "package_name": "next",
+        "current_version": "13.4.3",
+        "severity": "Low",
+        "cvss_score": 0,
+        "description": "Information exposure in Next.js dev server due to lack of origin verification",
+        "fixed_version": "14.2.30",
+        "fix_available": true
+      },
+      {
+        "vulnerability_id": "CVE-2023-46298",
+        "package_name": "next",
+        "current_version": "13.4.3",
+        "severity": "Low",
+        "cvss_score": 0,
+        "description": "Next.js missing cache-control header may lead to CDN caching empty reply",
+        "fixed_version": "13.4.20-canary.13",
+        "fix_available": true
+      }
+    ],
+    "sca_healthy_packages": [
+      {
+        "package_name": "websocket-client",
+        "package_version": "1.8",
+        "ecosystem": "PIP"
+      },
+      {
+        "package_name": "psycopg",
+        "package_version": "3.2",
+        "ecosystem": "PIP"
+      },
+      {
+        "package_name": "httpx",
+        "package_version": "0.28",
+        "ecosystem": "PIP"
+      },
+      {
+        "package_name": "dnspython",
+        "package_version": "2.7",
+        "ecosystem": "PIP"
+      },
+      {
+        "package_name": "beautifulsoup4",
+        "package_version": "4.12",
+        "ecosystem": "PIP"
+      },
+      {
+        "package_name": "python-dateutil",
+        "package_version": "2.9",
+        "ecosystem": "PIP"
+      },
+      {
+        "package_name": "structlog",
+        "package_version": "24.0",
+        "ecosystem": "PIP"
+      },
+      {
+        "package_name": "pytest-cov",
+        "package_version": "5.0",
+        "ecosystem": "PIP"
+      },
+      {
+        "package_name": "pytest-mock",
+        "package_version": "3.14",
+        "ecosystem": "PIP"
+      },
+      {
+        "package_name": "ruff",
+        "package_version": "0.6",
+        "ecosystem": "PIP"
+      },
+      {
+        "package_name": "bandit",
+        "package_version": "1.7",
+        "ecosystem": "PIP"
+      },
+      {
+        "package_name": "annotated-types",
+        "package_version": "0.8.0",
+        "ecosystem": "PIP"
+      },
+      {
+        "package_name": "anyio",
+        "package_version": "4.14.2",
+        "ecosystem": "PIP"
+      },
+      {
+        "package_name": "certifi",
+        "package_version": "2026.7.22",
+        "ecosystem": "PIP"
+      },
+      {
+        "package_name": "cffi",
+        "package_version": "2.1.1",
+        "ecosystem": "PIP"
+      },
+      {
+        "package_name": "colorama",
+        "package_version": "0.4.6",
+        "ecosystem": "PIP"
+      },
+      {
+        "package_name": "coverage",
+        "package_version": "7.16.0",
+        "ecosystem": "PIP"
+      },
+      {
+        "package_name": "h11",
+        "package_version": "0.16.0",
+        "ecosystem": "PIP"
+      },
+      {
+        "package_name": "httpcore",
+        "package_version": "1.0.9",
+        "ecosystem": "PIP"
+      },
+      {
+        "package_name": "idna",
+        "package_version": "3.19",
+        "ecosystem": "PIP"
+      },
+      {
+        "package_name": "iniconfig",
+        "package_version": "2.3.0",
+        "ecosystem": "PIP"
+      },
+      {
+        "package_name": "leadsdb-engine",
+        "package_version": "0.1.0",
+        "ecosystem": "PIP"
+      },
+      {
+        "package_name": "markdown-it-py",
+        "package_version": "4.2.0",
+        "ecosystem": "PIP"
+      },
+      {
+        "package_name": "mdurl",
+        "package_version": "0.1.2",
+        "ecosystem": "PIP"
+      },
+      {
+        "package_name": "packaging",
+        "package_version": "26.3",
+        "ecosystem": "PIP"
+      },
+      {
+        "package_name": "pluggy",
+        "package_version": "1.6.0",
+        "ecosystem": "PIP"
+      },
+      {
+        "package_name": "psycopg-binary",
+        "package_version": "3.3.4",
+        "ecosystem": "PIP"
+      },
+      {
+        "package_name": "pycparser",
+        "package_version": "3.0",
+        "ecosystem": "PIP"
+      },
+      {
+        "package_name": "pydantic-core",
+        "package_version": "2.46.5",
+        "ecosystem": "PIP"
+      },
+      {
+        "package_name": "pygments",
+        "package_version": "2.21.0",
+        "ecosystem": "PIP"
+      },
+      {
+        "package_name": "pyyaml",
+        "package_version": "6.0.3",
+        "ecosystem": "PIP"
+      },
+      {
+        "package_name": "rich",
+        "package_version": "15.0.0",
+        "ecosystem": "PIP"
+      },
+      {
+        "package_name": "six",
+        "package_version": "1.17.0",
+        "ecosystem": "PIP"
+      },
+      {
+        "package_name": "soupsieve",
+        "package_version": "2.9.2",
+        "ecosystem": "PIP"
+      },
+      {
+        "package_name": "stevedore",
+        "package_version": "5.9.1",
+        "ecosystem": "PIP"
+      },
+      {
+        "package_name": "typing-extensions",
+        "package_version": "4.16.0",
+        "ecosystem": "PIP"
+      },
+      {
+        "package_name": "typing-inspection",
+        "package_version": "0.4.4",
+        "ecosystem": "PIP"
+      },
+      {
+        "package_name": "tzdata",
+        "package_version": "2026.3",
+        "ecosystem": "PIP"
+      },
+      {
+        "package_name": "@types/node",
+        "package_version": "20.1.4",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@types/react",
+        "package_version": "18.2.6",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@types/react-dom",
+        "package_version": "18.2.4",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "pg",
+        "package_version": "8.23.0",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "react",
+        "package_version": "18.2.0",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "react-dom",
+        "package_version": "18.2.0",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "typescript",
+        "package_version": "5.0.4",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@tailwindcss/postcss",
+        "package_version": "4.3.3",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@types/pg",
+        "package_version": "8.23.1",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@vitest/coverage-v8",
+        "package_version": "2.0.0",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@alloc",
+        "package_version": "quick-lru@5.2.0",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@apollo",
+        "package_version": "client@3.8.10",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@astrajs",
+        "package_version": "client@0.3.4",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@astrajs",
+        "package_version": "collections@0.3.4",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@astrajs",
+        "package_version": "rest@0.3.4",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@babel",
+        "package_version": "runtime@7.21.5",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@colors",
+        "package_version": "colors@1.6.0",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@dabh",
+        "package_version": "diagnostics@2.0.3",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@datastax",
+        "package_version": "astra-db-ts@0.1.4",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@emotion",
+        "package_version": "hash@0.7.4",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@eslint-community",
+        "package_version": "eslint-utils@4.4.0",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@eslint-community",
+        "package_version": "regexpp@4.5.1",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@eslint",
+        "package_version": "eslintrc@2.0.3",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@eslint",
+        "package_version": "js@8.40.0",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@graphql-typed-document-node",
+        "package_version": "core@3.2.0",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@heroicons",
+        "package_version": "react@2.1.3",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@humanwhocodes",
+        "package_version": "config-array@0.11.8",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@humanwhocodes",
+        "package_version": "module-importer@1.0.1",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@humanwhocodes",
+        "package_version": "object-schema@1.2.1",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@jridgewell",
+        "package_version": "gen-mapping@0.3.3",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@jridgewell",
+        "package_version": "resolve-uri@3.1.0",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@jridgewell",
+        "package_version": "set-array@1.1.2",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@jridgewell",
+        "package_version": "sourcemap-codec@1.4.14",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@jridgewell",
+        "package_version": "sourcemap-codec@1.4.15",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@jridgewell",
+        "package_version": "trace-mapping@0.3.18",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@next",
+        "package_version": "env@13.4.3",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@next",
+        "package_version": "eslint-plugin-next@13.4.2",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@next",
+        "package_version": "swc-darwin-arm64@13.4.3",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@next",
+        "package_version": "swc-darwin-x64@13.4.3",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@next",
+        "package_version": "swc-linux-arm64-gnu@13.4.3",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@next",
+        "package_version": "swc-linux-arm64-musl@13.4.3",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@next",
+        "package_version": "swc-linux-x64-gnu@13.4.3",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@next",
+        "package_version": "swc-linux-x64-musl@13.4.3",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@next",
+        "package_version": "swc-win32-arm64-msvc@13.4.3",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@next",
+        "package_version": "swc-win32-ia32-msvc@13.4.3",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@next",
+        "package_version": "swc-win32-x64-msvc@13.4.3",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@nodelib",
+        "package_version": "fs.scandir@2.1.5",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@nodelib",
+        "package_version": "fs.stat@2.0.5",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@nodelib",
+        "package_version": "fs.walk@1.2.8",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@pkgr",
+        "package_version": "utils@2.4.0",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@rushstack",
+        "package_version": "eslint-patch@1.3.0",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@segment",
+        "package_version": "react-tiny-virtual-list@2.2.1",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@swc",
+        "package_version": "helpers@0.5.1",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@types",
+        "package_version": "json5@0.0.29",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@types",
+        "package_version": "node@20.1.4",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@types",
+        "package_version": "prop-types@15.7.5",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@types",
+        "package_version": "react-dom@18.2.4",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@types",
+        "package_version": "react-transition-group@4.4.10",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@types",
+        "package_version": "react@18.2.6",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@types",
+        "package_version": "scheduler@0.16.3",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@types",
+        "package_version": "triple-beam@1.3.5",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@typescript-eslint",
+        "package_version": "parser@5.59.7",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@typescript-eslint",
+        "package_version": "scope-manager@5.59.7",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@typescript-eslint",
+        "package_version": "types@5.59.7",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@typescript-eslint",
+        "package_version": "typescript-estree@5.59.7",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@typescript-eslint",
+        "package_version": "visitor-keys@5.59.7",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@wry",
+        "package_version": "caches@1.0.1",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@wry",
+        "package_version": "context@0.7.4",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@wry",
+        "package_version": "equality@0.5.7",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@wry",
+        "package_version": "trie@0.4.3",
+        "ecosystem": "NPM"
+      },
+      {
+        "package_name": "@wry",
+        "package_version": "trie@0.5.0",
+        "ecosystem": "NPM"
+      }
+    ],
+    "antipatterns": [
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/(internal)/daily_merge.py/anti_patterns.json",
+        "line_number": 119,
+        "message": "Remove this redundant return.",
+        "symbol": "python:S3626"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/(internal)/daily_merge.py/anti_patterns.json",
+        "line_number": 128,
+        "message": "Remove this redundant return.",
+        "symbol": "python:S3626"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/app/settings/page.tsx/anti_patterns.json",
+        "line_number": 189,
+        "message": "This always evaluates to falsy. Consider refactoring this code.",
+        "symbol": "sonarjs/no-gratuitous-expressions"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/leadsdb_engine/crm.py/anti_patterns.json",
+        "line_number": 280,
+        "message": "Extract this nested conditional expression into an independent statement.",
+        "symbol": "python:S3358"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/tests/test_crm.py/anti_patterns.json",
+        "line_number": 60,
+        "message": "Do not perform equality checks with floating point values.",
+        "symbol": "python:S1244"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/tests/test_db.py/anti_patterns.json",
+        "line_number": 44,
+        "message": "Do not perform equality checks with floating point values.",
+        "symbol": "python:S1244"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "use `Boolean([])` instead.",
+        "symbol": "autofix/no-implicit-coercion"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Redundant double negation.",
+        "symbol": "autofix/no-extra-boolean-cast"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Unexpected constant condition.",
+        "symbol": "no-constant-condition"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Missing radix parameter.",
+        "symbol": "autofix/radix"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Missing radix parameter.",
+        "symbol": "autofix/radix"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Missing radix parameter.",
+        "symbol": "autofix/radix"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Missing radix parameter.",
+        "symbol": "autofix/radix"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Missing radix parameter.",
+        "symbol": "autofix/radix"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Missing radix parameter.",
+        "symbol": "autofix/radix"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Missing radix parameter.",
+        "symbol": "autofix/radix"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Missing radix parameter.",
+        "symbol": "autofix/radix"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "use `Number(-0xd1c)` instead.",
+        "symbol": "autofix/no-implicit-coercion"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Missing radix parameter.",
+        "symbol": "autofix/radix"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Missing radix parameter.",
+        "symbol": "autofix/radix"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Missing radix parameter.",
+        "symbol": "autofix/radix"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Require statement not part of import statement.",
+        "symbol": "@typescript-eslint/no-var-requires"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Require statement not part of import statement.",
+        "symbol": "@typescript-eslint/no-var-requires"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Require statement not part of import statement.",
+        "symbol": "@typescript-eslint/no-var-requires"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Require statement not part of import statement.",
+        "symbol": "@typescript-eslint/no-var-requires"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Require statement not part of import statement.",
+        "symbol": "@typescript-eslint/no-var-requires"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Unexpected string concatenation.",
+        "symbol": "autofix/prefer-template"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Unexpected string concatenation.",
+        "symbol": "autofix/prefer-template"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Unexpected string concatenation.",
+        "symbol": "autofix/prefer-template"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Unexpected string concatenation.",
+        "symbol": "autofix/prefer-template"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Unexpected string concatenation.",
+        "symbol": "autofix/prefer-template"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Expected '!==' and instead saw '!='.",
+        "symbol": "autofix/eqeqeq"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Expected '!==' and instead saw '!='.",
+        "symbol": "autofix/eqeqeq"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Unexpected string concatenation.",
+        "symbol": "autofix/prefer-template"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Promise constructor parameters must be named to match \"^_?resolve$\"",
+        "symbol": "promise/param-names"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Promise constructor parameters must be named to match \"^_?reject$\"",
+        "symbol": "promise/param-names"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Unexpected string concatenation.",
+        "symbol": "autofix/prefer-template"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "use `Number(-0x174b)` instead.",
+        "symbol": "autofix/no-implicit-coercion"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "use `Number(-0x236)` instead.",
+        "symbol": "autofix/no-implicit-coercion"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "use `Number(-0xc6f)` instead.",
+        "symbol": "autofix/no-implicit-coercion"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Unexpected string concatenation.",
+        "symbol": "autofix/prefer-template"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Unexpected string concatenation.",
+        "symbol": "autofix/prefer-template"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "'_0x3307' is a function.",
+        "symbol": "no-func-assign"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "'_0x1d3d9c' is never reassigned. Use 'const' instead.",
+        "symbol": "autofix/prefer-const"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Unexpected string concatenation.",
+        "symbol": "autofix/prefer-template"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Promise constructor parameters must be named to match \"^_?resolve$\"",
+        "symbol": "promise/param-names"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Return values from promise executor functions cannot be read.",
+        "symbol": "no-promise-executor-return"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Was \"!=\" meant instead?",
+        "symbol": "sonarjs/non-existent-operator"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Was \"!=\" meant instead?",
+        "symbol": "sonarjs/non-existent-operator"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Unary operator '--' used.",
+        "symbol": "autofix/no-plusplus"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Unary operator '--' used.",
+        "symbol": "autofix/no-plusplus"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Unexpected string concatenation.",
+        "symbol": "autofix/prefer-template"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Unexpected string concatenation.",
+        "symbol": "autofix/prefer-template"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Arrow function used ambiguously with a conditional expression.",
+        "symbol": "autofix/no-confusing-arrow"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Use '===' to compare with null.",
+        "symbol": "autofix/no-eq-null"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Expected '!==' and instead saw '!='.",
+        "symbol": "autofix/eqeqeq"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Arrow function used ambiguously with a conditional expression.",
+        "symbol": "autofix/no-confusing-arrow"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Unexpected string concatenation.",
+        "symbol": "autofix/prefer-template"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Unexpected string concatenation.",
+        "symbol": "autofix/prefer-template"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "use `Number(-0xd69)` instead.",
+        "symbol": "autofix/no-implicit-coercion"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Unexpected string concatenation.",
+        "symbol": "autofix/prefer-template"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Unexpected string concatenation.",
+        "symbol": "autofix/prefer-template"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Unexpected string concatenation.",
+        "symbol": "autofix/prefer-template"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Unexpected string concatenation.",
+        "symbol": "autofix/prefer-template"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Unexpected string concatenation.",
+        "symbol": "autofix/prefer-template"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "use `Number(-0x23d8)` instead.",
+        "symbol": "autofix/no-implicit-coercion"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "use `Number(-0x1372)` instead.",
+        "symbol": "autofix/no-implicit-coercion"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "use `Number(-0x1fd3)` instead.",
+        "symbol": "autofix/no-implicit-coercion"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "use `Number(_0x5172cf[_0x1fe8ef(0x96)])` instead.",
+        "symbol": "autofix/no-implicit-coercion"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Unary operator '++' used.",
+        "symbol": "autofix/no-plusplus"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Promise constructor parameters must be named to match \"^_?resolve$\"",
+        "symbol": "promise/param-names"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Promise constructor parameters must be named to match \"^_?reject$\"",
+        "symbol": "promise/param-names"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "eval can be harmful.",
+        "symbol": "no-eval"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Empty block statement.",
+        "symbol": "no-empty"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/tailwind.config.js/anti_patterns.json",
+        "line_number": 18,
+        "message": "Unexpected string concatenation.",
+        "symbol": "autofix/prefer-template"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/utils/helpers/classNames.ts/anti_patterns.json",
+        "line_number": 1,
+        "message": "Unexpected any. Specify a different type.",
+        "symbol": "@typescript-eslint/no-explicit-any"
+      }
+    ],
+    "complex_functions": [
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/(internal)/daily_merge.py/complex_functions.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/app/api/v1/settings/route.ts/complex_functions.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/app/api/v1/settings/route.ts/complex_functions.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/app/settings/page.tsx/complex_functions.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/leadsdb_engine/processors/certstream_ingestor.py/complex_functions.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/leadsdb_engine/processors/domain_enricher.py/complex_functions.json"
+      }
+    ],
+    "docstrings_absent": [
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/(internal)/daily_merge.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/(internal)/daily_merge.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/(internal)/daily_merge.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/app/settings/header.tsx/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/app/settings/page.tsx/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/app/settings/page.tsx/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/app/settings/page.tsx/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/leadsdb_engine/db.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/leadsdb_engine/crm.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/leadsdb_engine/crm.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/leadsdb_engine/crm.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/leadsdb_engine/crm.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/leadsdb_engine/crm.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/leadsdb_engine/crm.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/leadsdb_engine/crm.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/leadsdb_engine/crm.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/leadsdb_engine/crm.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/leadsdb_engine/crm.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/leadsdb_engine/crm.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/leadsdb_engine/crm.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/leadsdb_engine/crm.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/leadsdb_engine/crm.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/leadsdb_engine/crm.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/leadsdb_engine/crm.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/leadsdb_engine/crm.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/leadsdb_engine/crm.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/app/api/v1/settings/route.ts/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/app/api/v1/settings/route.ts/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/leadsdb_engine/processors/certstream_ingestor.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/leadsdb_engine/processors/domain_enricher.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/leadsdb_engine/transports/resend.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/tests/test_crm.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/tests/test_crm.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/tests/test_crm.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/tests/test_crm.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/tests/test_crm.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/tests/test_crm.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/tests/test_crm.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/tests/test_crm.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/tests/test_crm.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/scripts/seed.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/tests/test_crypto.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/tests/test_crypto.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/tests/test_crypto.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/tests/test_crypto.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/tests/test_processor_fixes.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/tests/test_processor_fixes.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/tests/test_db.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/tests/test_db.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/tests/test_db.py/docstring.json"
+      },
+      {
+        "file_path": "e7d931e4002f787ea9f4ffda7849084e1ff7ada8/engine/tests/test_lead_promoter.py/docstring.json"
+      }
+    ],
+    "duplicate_code": [
+      {
+        "group_id": 1,
+        "occurrences": [
+          {
+            "file_path": ""
+          },
+          {
+            "file_path": ""
+          }
+        ]
+      },
+      {
+        "group_id": 2,
+        "occurrences": [
+          {
+            "file_path": ""
+          },
+          {
+            "file_path": ""
+          },
+          {
+            "file_path": ""
+          }
+        ]
+      }
+    ],
+    "dead_code": [
+      {
+        "type": "python",
+        "sub_type": "function",
+        "file_path": "engine/leadsdb_engine/crypto.py",
+        "message": "unused function 'zeroize' (60% confidence)",
+        "line_number": 96,
+        "confidence": "60"
+      },
+      {
+        "type": "python",
+        "sub_type": "function",
+        "file_path": "engine/leadsdb_engine/db.py",
+        "message": "unused function 'get_setting' (60% confidence)",
+        "line_number": 555,
+        "confidence": "60"
+      },
+      {
+        "type": "python",
+        "sub_type": "function",
+        "file_path": "engine/leadsdb_engine/db.py",
+        "message": "unused function 'set_setting' (60% confidence)",
+        "line_number": 582,
+        "confidence": "60"
+      },
+      {
+        "type": "python",
+        "sub_type": "function",
+        "file_path": "engine/leadsdb_engine/db.py",
+        "message": "unused function 'set_secret' (60% confidence)",
+        "line_number": 616,
+        "confidence": "60"
+      },
+      {
+        "type": "python",
+        "sub_type": "import",
+        "file_path": "(internal)/daily_merge.py",
+        "message": "unused import 'functools' (90% confidence)",
+        "line_number": 7,
+        "confidence": "90"
+      },
+      {
+        "type": "python",
+        "sub_type": "import",
+        "file_path": "(internal)/daily_merge.py",
+        "message": "unused import 'concurrent' (90% confidence)",
+        "line_number": 8,
+        "confidence": "90"
+      },
+      {
+        "type": "python",
+        "sub_type": "import",
+        "file_path": "(internal)/daily_merge.py",
+        "message": "unused import 'shlex' (90% confidence)",
+        "line_number": 12,
+        "confidence": "90"
+      },
+      {
+        "type": "python",
+        "sub_type": "import",
+        "file_path": "(internal)/daily_merge.py",
+        "message": "unused import 'code' (90% confidence)",
+        "line_number": 14,
+        "confidence": "90"
+      },
+      {
+        "type": "python",
+        "sub_type": "import",
+        "file_path": "(internal)/daily_merge.py",
+        "message": "unused import 'pprint' (90% confidence)",
+        "line_number": 15,
+        "confidence": "90"
+      },
+      {
+        "type": "python",
+        "sub_type": "import",
+        "file_path": "(internal)/daily_merge.py",
+        "message": "unused import 'timezone' (90% confidence)",
+        "line_number": 17,
+        "confidence": "90"
+      },
+      {
+        "type": "python",
+        "sub_type": "variable",
+        "file_path": "(internal)/daily_merge.py",
+        "message": "unused variable 'exec_mv_ref_today_new_to_ref_yesterday_new' (60% confidence)",
+        "line_number": 101,
+        "confidence": "60"
+      },
+      {
+        "type": "python",
+        "sub_type": "variable",
+        "file_path": "(internal)/daily_merge.py",
+        "message": "unused variable 'exec_mv_fresh_today_to_ref_today' (60% confidence)",
+        "line_number": 114,
+        "confidence": "60"
+      },
+      {
+        "type": "python",
+        "sub_type": "variable",
+        "file_path": "engine/leadsdb_engine/db.py",
+        "message": "unused variable 'GET_LEADS' (60% confidence)",
+        "line_number": 220,
+        "confidence": "60"
+      },
+      {
+        "type": "python",
+        "sub_type": "variable",
+        "file_path": "engine/leadsdb_engine/db.py",
+        "message": "unused variable 'COUNT_LEADS' (60% confidence)",
+        "line_number": 246,
+        "confidence": "60"
+      },
+      {
+        "type": "python",
+        "sub_type": "variable",
+        "file_path": "engine/leadsdb_engine/processors/base.py",
+        "message": "unused variable 'frame' (100% confidence)",
+        "line_number": 53,
+        "confidence": "100"
+      },
+      {
+        "type": "python",
+        "sub_type": "variable",
+        "file_path": "engine/leadsdb_engine/processors/base.py",
+        "message": "unused variable 'signum' (100% confidence)",
+        "line_number": 53,
+        "confidence": "100"
+      }
+    ],
+    "sbom": [
+      {
+        "language": "Python",
+        "name": "websocket-client",
+        "version": "1.8",
+        "license": "Apache-2.0",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE). Obligations may trigger if you statically link or vendor this library; dynamic linking typically avoids reciprocity."
+      },
+      {
+        "language": "Python",
+        "name": "psycopg",
+        "version": "3.2",
+        "license": "LGPL-3.0-only",
+        "copyleftStrength": "weak_copyleft",
+        "policyNote": "LGPL (weak copyleft): obligations mainly apply to the library itself — static linking or vendoring can require relinking or publishing changes; dynamic linking is typically OK."
+      },
+      {
+        "language": "Python",
+        "name": "httpx",
+        "version": "0.28",
+        "license": "BSD-3-Clause",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE)."
+      },
+      {
+        "language": "Python",
+        "name": "dnspython",
+        "version": "2.7",
+        "license": "ISC",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE)."
+      },
+      {
+        "language": "Python",
+        "name": "beautifulsoup4",
+        "version": "4.12",
+        "license": "MIT",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE). Changes to the covered files/libraries must be published on distribution."
+      },
+      {
+        "language": "Python",
+        "name": "lxml",
+        "version": "5.1",
+        "license": "BSD-3-Clause",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE)."
+      },
+      {
+        "language": "Python",
+        "name": "python-dateutil",
+        "version": "2.9",
+        "license": "Dual License",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "Python",
+        "name": "pydantic",
+        "version": "2.0",
+        "license": "MIT",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE). Changes to the covered files/libraries must be published on distribution."
+      },
+      {
+        "language": "Python",
+        "name": "structlog",
+        "version": "24.0",
+        "license": "MIT OR Apache-2.0",
+        "copyleftStrength": "permissive",
+        "policyNote": "Dual/multi-licensed (MIT OR Apache-2.0). You may choose a license; the least restrictive option is permissive."
+      },
+      {
+        "language": "Python",
+        "name": "cryptography",
+        "version": "42.0",
+        "license": "Apache-2.0 OR BSD-3-Clause",
+        "copyleftStrength": "permissive",
+        "policyNote": "Dual/multi-licensed (Apache-2.0 OR BSD-3-Clause). You may choose a license; the least restrictive option is permissive."
+      },
+      {
+        "language": "Python",
+        "name": "pytest",
+        "version": "8.0",
+        "license": "MIT",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE). Changes to the covered files/libraries must be published on distribution."
+      },
+      {
+        "language": "Python",
+        "name": "pytest-cov",
+        "version": "5.0",
+        "license": "MIT",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE). Changes to the covered files/libraries must be published on distribution."
+      },
+      {
+        "language": "Python",
+        "name": "pytest-mock",
+        "version": "3.14",
+        "license": "MIT",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE). Changes to the covered files/libraries must be published on distribution."
+      },
+      {
+        "language": "Python",
+        "name": "ruff",
+        "version": "0.6",
+        "license": "MIT",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE). Changes to the covered files/libraries must be published on distribution."
+      },
+      {
+        "language": "Python",
+        "name": "bandit",
+        "version": "1.7",
+        "license": "Apache-2.0",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE). Obligations may trigger if you statically link or vendor this library; dynamic linking typically avoids reciprocity."
+      },
+      {
+        "language": "Python",
+        "name": "annotated-types",
+        "version": "0.8.0",
+        "license": "MIT",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE). Changes to the covered files/libraries must be published on distribution."
+      },
+      {
+        "language": "Python",
+        "name": "anyio",
+        "version": "4.14.2",
+        "license": "MIT",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE). Changes to the covered files/libraries must be published on distribution."
+      },
+      {
+        "language": "Python",
+        "name": "certifi",
+        "version": "2026.7.22",
+        "license": "MPL-2.0",
+        "copyleftStrength": "weak_copyleft",
+        "policyNote": "MPL-2.0 (file-level copyleft): if you modify MPL-covered files and distribute, you must publish those file changes; your application may remain under your license. If you offer the software as a network service, you must make the source available to users."
+      },
+      {
+        "language": "Python",
+        "name": "cffi",
+        "version": "2.1.1",
+        "license": "MIT-0",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE)."
+      },
+      {
+        "language": "Python",
+        "name": "colorama",
+        "version": "0.4.6",
+        "license": "BSD-3-Clause",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE)."
+      },
+      {
+        "language": "Python",
+        "name": "coverage",
+        "version": "7.16.0",
+        "license": "Apache-2.0",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE). Obligations may trigger if you statically link or vendor this library; dynamic linking typically avoids reciprocity."
+      },
+      {
+        "language": "Python",
+        "name": "h11",
+        "version": "0.16.0",
+        "license": "MIT",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE). Changes to the covered files/libraries must be published on distribution."
+      },
+      {
+        "language": "Python",
+        "name": "httpcore",
+        "version": "1.0.9",
+        "license": "BSD-3-Clause",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE)."
+      },
+      {
+        "language": "Python",
+        "name": "idna",
+        "version": "3.19",
+        "license": "BSD-3-Clause",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE)."
+      },
+      {
+        "language": "Python",
+        "name": "iniconfig",
+        "version": "2.3.0",
+        "license": "MIT",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE). Changes to the covered files/libraries must be published on distribution."
+      },
+      {
+        "language": "Python",
+        "name": "leadsdb-engine",
+        "version": "0.1.0",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "Python",
+        "name": "markdown-it-py",
+        "version": "4.2.0",
+        "license": "MIT",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE). Changes to the covered files/libraries must be published on distribution."
+      },
+      {
+        "language": "Python",
+        "name": "mdurl",
+        "version": "0.1.2",
+        "license": "MIT",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE). Changes to the covered files/libraries must be published on distribution."
+      },
+      {
+        "language": "Python",
+        "name": "packaging",
+        "version": "26.3",
+        "license": "Apache-2.0 OR BSD-2-Clause",
+        "copyleftStrength": "permissive",
+        "policyNote": "Dual/multi-licensed (Apache-2.0 OR BSD-2-Clause). You may choose a license; the least restrictive option is permissive."
+      },
+      {
+        "language": "Python",
+        "name": "pluggy",
+        "version": "1.6.0",
+        "license": "MIT",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE). Changes to the covered files/libraries must be published on distribution."
+      },
+      {
+        "language": "Python",
+        "name": "psycopg-binary",
+        "version": "3.3.4",
+        "license": "LGPL-3.0-only",
+        "copyleftStrength": "weak_copyleft",
+        "policyNote": "LGPL (weak copyleft): obligations mainly apply to the library itself — static linking or vendoring can require relinking or publishing changes; dynamic linking is typically OK."
+      },
+      {
+        "language": "Python",
+        "name": "pycparser",
+        "version": "3.0",
+        "license": "BSD-3-Clause",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE)."
+      },
+      {
+        "language": "Python",
+        "name": "pydantic-core",
+        "version": "2.46.5",
+        "license": "MIT",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE). Changes to the covered files/libraries must be published on distribution."
+      },
+      {
+        "language": "Python",
+        "name": "pygments",
+        "version": "2.21.0",
+        "license": "BSD-2-Clause",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE)."
+      },
+      {
+        "language": "Python",
+        "name": "pyyaml",
+        "version": "6.0.3",
+        "license": "MIT",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE). Changes to the covered files/libraries must be published on distribution."
+      },
+      {
+        "language": "Python",
+        "name": "rich",
+        "version": "15.0.0",
+        "license": "MIT",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE). Changes to the covered files/libraries must be published on distribution."
+      },
+      {
+        "language": "Python",
+        "name": "six",
+        "version": "1.17.0",
+        "license": "MIT",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE). Changes to the covered files/libraries must be published on distribution."
+      },
+      {
+        "language": "Python",
+        "name": "soupsieve",
+        "version": "2.9.2",
+        "license": "MIT",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE). Changes to the covered files/libraries must be published on distribution."
+      },
+      {
+        "language": "Python",
+        "name": "stevedore",
+        "version": "5.9.1",
+        "license": "Apache-2.0",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE). Obligations may trigger if you statically link or vendor this library; dynamic linking typically avoids reciprocity."
+      },
+      {
+        "language": "Python",
+        "name": "typing-extensions",
+        "version": "4.16.0",
+        "license": "PSF-2.0",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE)."
+      },
+      {
+        "language": "Python",
+        "name": "typing-inspection",
+        "version": "0.4.4",
+        "license": "MIT",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE). Changes to the covered files/libraries must be published on distribution."
+      },
+      {
+        "language": "Python",
+        "name": "tzdata",
+        "version": "2026.3",
+        "license": "Apache-2.0",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE). Obligations may trigger if you statically link or vendor this library; dynamic linking typically avoids reciprocity."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@types/node",
+        "version": "20.1.4",
+        "license": "MIT",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE). Changes to the covered files/libraries must be published on distribution."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@types/react",
+        "version": "18.2.6",
+        "license": "MIT",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE). Changes to the covered files/libraries must be published on distribution."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@types/react-dom",
+        "version": "18.2.4",
+        "license": "MIT",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE). Changes to the covered files/libraries must be published on distribution."
+      },
+      {
+        "language": "JavaScript",
+        "name": "next",
+        "version": "13.4.3",
+        "license": "MIT",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE). Changes to the covered files/libraries must be published on distribution."
+      },
+      {
+        "language": "JavaScript",
+        "name": "pg",
+        "version": "8.23.0",
+        "license": "MIT",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE). Changes to the covered files/libraries must be published on distribution."
+      },
+      {
+        "language": "JavaScript",
+        "name": "react",
+        "version": "18.2.0",
+        "license": "MIT",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE). Changes to the covered files/libraries must be published on distribution."
+      },
+      {
+        "language": "JavaScript",
+        "name": "react-dom",
+        "version": "18.2.0",
+        "license": "MIT",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE). Changes to the covered files/libraries must be published on distribution."
+      },
+      {
+        "language": "JavaScript",
+        "name": "typescript",
+        "version": "5.0.4",
+        "license": "Apache-2.0",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE). Obligations may trigger if you statically link or vendor this library; dynamic linking typically avoids reciprocity."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@tailwindcss/postcss",
+        "version": "4.3.3",
+        "license": "MIT",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE). Changes to the covered files/libraries must be published on distribution."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@types/pg",
+        "version": "8.23.1",
+        "license": "MIT",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE). Changes to the covered files/libraries must be published on distribution."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@vitest/coverage-v8",
+        "version": "2.0.0",
+        "license": "MIT",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE). Changes to the covered files/libraries must be published on distribution."
+      },
+      {
+        "language": "JavaScript",
+        "name": "vitest",
+        "version": "2.1.9",
+        "license": "MIT",
+        "copyleftStrength": "permissive",
+        "policyNote": "Permissive license: keep license and notices (Apache also keep NOTICE). Changes to the covered files/libraries must be published on distribution."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@alloc",
+        "version": "quick-lru@5.2.0",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@apollo",
+        "version": "client@3.8.10",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@astrajs",
+        "version": "client@0.3.4",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@astrajs",
+        "version": "collections@0.3.4",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@astrajs",
+        "version": "rest@0.3.4",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@babel",
+        "version": "runtime@7.21.5",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@colors",
+        "version": "colors@1.6.0",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@dabh",
+        "version": "diagnostics@2.0.3",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@datastax",
+        "version": "astra-db-ts@0.1.4",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@emotion",
+        "version": "hash@0.7.4",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@eslint-community",
+        "version": "eslint-utils@4.4.0",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@eslint-community",
+        "version": "regexpp@4.5.1",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@eslint",
+        "version": "eslintrc@2.0.3",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@eslint",
+        "version": "js@8.40.0",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@graphql-typed-document-node",
+        "version": "core@3.2.0",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@heroicons",
+        "version": "react@2.1.3",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@humanwhocodes",
+        "version": "config-array@0.11.8",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@humanwhocodes",
+        "version": "module-importer@1.0.1",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@humanwhocodes",
+        "version": "object-schema@1.2.1",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@jridgewell",
+        "version": "gen-mapping@0.3.3",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@jridgewell",
+        "version": "resolve-uri@3.1.0",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@jridgewell",
+        "version": "set-array@1.1.2",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@jridgewell",
+        "version": "sourcemap-codec@1.4.14",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@jridgewell",
+        "version": "sourcemap-codec@1.4.15",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@jridgewell",
+        "version": "trace-mapping@0.3.18",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@next",
+        "version": "env@13.4.3",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@next",
+        "version": "eslint-plugin-next@13.4.2",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@next",
+        "version": "swc-darwin-arm64@13.4.3",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@next",
+        "version": "swc-darwin-x64@13.4.3",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@next",
+        "version": "swc-linux-arm64-gnu@13.4.3",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@next",
+        "version": "swc-linux-arm64-musl@13.4.3",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@next",
+        "version": "swc-linux-x64-gnu@13.4.3",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@next",
+        "version": "swc-linux-x64-musl@13.4.3",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@next",
+        "version": "swc-win32-arm64-msvc@13.4.3",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@next",
+        "version": "swc-win32-ia32-msvc@13.4.3",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@next",
+        "version": "swc-win32-x64-msvc@13.4.3",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@nodelib",
+        "version": "fs.scandir@2.1.5",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@nodelib",
+        "version": "fs.stat@2.0.5",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@nodelib",
+        "version": "fs.walk@1.2.8",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@pkgr",
+        "version": "utils@2.4.0",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@rushstack",
+        "version": "eslint-patch@1.3.0",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@segment",
+        "version": "react-tiny-virtual-list@2.2.1",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@swc",
+        "version": "helpers@0.5.1",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@types",
+        "version": "json5@0.0.29",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@types",
+        "version": "node@20.1.4",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@types",
+        "version": "prop-types@15.7.5",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@types",
+        "version": "react-dom@18.2.4",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@types",
+        "version": "react-transition-group@4.4.10",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@types",
+        "version": "react@18.2.6",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@types",
+        "version": "scheduler@0.16.3",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@types",
+        "version": "triple-beam@1.3.5",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@typescript-eslint",
+        "version": "parser@5.59.7",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@typescript-eslint",
+        "version": "scope-manager@5.59.7",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@typescript-eslint",
+        "version": "types@5.59.7",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@typescript-eslint",
+        "version": "typescript-estree@5.59.7",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@typescript-eslint",
+        "version": "visitor-keys@5.59.7",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@wry",
+        "version": "caches@1.0.1",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@wry",
+        "version": "context@0.7.4",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@wry",
+        "version": "equality@0.5.7",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@wry",
+        "version": "trie@0.4.3",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      },
+      {
+        "language": "JavaScript",
+        "name": "@wry",
+        "version": "trie@0.5.0",
+        "license": "UNKNOWN",
+        "copyleftStrength": "unknown",
+        "policyNote": "Custom/unknown terms — needs manual review before shipping."
+      }
+    ]
+  }
+}

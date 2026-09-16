@@ -1,116 +1,216 @@
+<div align="center">
+
 # LeadsDB
 
-**V2 development underway.** Preview available — email [contact@isaacbell.io](mailto:contact@isaacbell.io).
+**Open-source B2B lead pipeline — CT-log discovery → enrichment → LLM scoring → CRM → outreach**
 
-![image](https://github.com/IsaacBell/leads-db/assets/2613157/5b5b3cf3-010f-40e1-a6a5-e1b03bdb6923)
+![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
+![Next.js](https://img.shields.io/badge/Next.js-16-black.svg)
+![React](https://img.shields.io/badge/React-19-blue.svg)
+![Python](https://img.shields.io/badge/python-3.12+-yellow.svg)
+![Postgres](https://img.shields.io/badge/DB-Postgres-green.svg)
 
+</div>
+
+LeadsDB turns certificate-transparency logs into a working B2B lead pipeline:
+
+1. **Ingest** raw domains from the certstream WebSocket
+2. **Enrich** domains with DNS/HTTP + rule-based classification
+3. **Score** promising domains with any LLM (BYOK)
+4. **Promote** scored domains into a multi-tenant CRM
+5. **Outreach** via pluggable email transports (log-only by default)
+
+The web UI (Next.js) and the Python engine share one Postgres database.
 
 ---
-## Introduction
-LeadsDB is a lead generation system. On the back end, the system performs daily ingestions of company data as well as Newly Registered Domains (NRDs). It attempts to identify companies which may serve as candidate leads, then presents the best results to the user (see below). 
 
-1. ✓ Lead data can be retrieved through a REST API. 
-2. 🚧 Users receive email blasts of a few companies each week which match their preferences. (Under construction: Approx. 85% completed)
-3. 🔴 Users can integrate LeadsDB into their Hubspot or Salesforce projects, and leads will populate directly in their existing system. (Not started)
+## Stack
 
-This repository is home to the user-facing front end, as well as the user-facing REST API. All code related to data ingestion exists in a separate, [private micro-client](https://github.com/IsaacBell/nrd-poll). 
+| Layer | Technology |
+|---|---|
+| Frontend / API | Next.js 16 (App Router), React 19, TypeScript, Tailwind, pnpm |
+| Engine | Python 3.12, asyncio, httpx, psycopg3, uv |
+| Database | Postgres (Neon serverless supported) |
+| Data source | Certificate Transparency logs via certstream |
+| LLM scoring | Any OpenAI-compatible endpoint (BYOK) |
+| Email | Resend (magic-link auth + outreach transport adapter) |
+| Auth | Better Auth (self-hosted, magic link) |
+| Secrets | Infisical (maintainers) / `.env` (self-hosters) |
 
-This repository integrates a Next.js frontend with a Flask backend. For data storage, an [external Cassandra database](https://astra.datastax.com/) is used which then forwards data to external data warehouses through CDC trigger procedures. It includes features such as automatic NRD ingestion, [company data enrichment](https://blog.hubspot.com/sales/data-enrichment) using [Abstract API](https://docs.abstractapi.com/company-enrichment), and subscriber management using the [Notion API](https://github.com/btahir/notion-capture).
+---
 
-The app is automatically deployed to [GCP](https://cloud.google.com/) Cloud Run, where it lives as a stateless app. Importantly, that means that contributors should not add code which saves state locally. We are loosely following a trunk-based branching strategy which will be formalized once Phase 2 is complete.
+## Quick start
 
-## Prerequisites
+### Prerequisites
 
-- Node.js
-- Python 3.x
-- pip package manager
+Install [mise](https://mise.jdx.dev), then run from the repo root to install the pinned toolchain (Node, pnpm, Python, uv, just, vercel):
 
-## Getting Started
-
-### Clone the repository:
-
-```
-git clone https://github.com/IsaacBell/leads-db.git
-cd leads-db
-```
-
-### Install the dependencies:
-
-```
-pnpm install
-python -m spacy download en_core_web_md
-pip install -r requirements.txt
+```shell
+mise install
+mise exec -- pnpm install
 ```
 
-### Set up environment variables:
+Alternative: install tools manually. Minimums: Node 20.19+, pnpm 9+, Python 3.12+, [uv](https://docs.astral.sh/uv), [just](https://github.com/casey/just).
 
-- Create a `.env` file in the root directory.
-- Add the following variables to the `.env` file:
-  - `ASTRA_DB_API_ENDPOINT`: Astra DB API endpoint URL
-  - `ASTRA_DB_APPLICATION_TOKEN`: Astra DB application token
-  - `PULSAR_STREAMING_API_TOKEN`: Pulsar streaming API token
-  - `ASTRA_DB_STREAMING_URL`: Astra DB streaming URL
-  - `ABSTRACT_API_COMPANY_ENRICHMENT_API_URL`: Abstract API company enrichment URL
-  - `ABSTRACT_API_COMPANY_ENRICHMENT_API_KEY`: Abstract API company enrichment API key
-  - `ABSTRACT_API_SCRAPE_URL`: Abstract API scrape URL
-  - `ABSTRACT_API_SCRAPE_API_KEY`: Abstract API scrape API key
-  - `NOTION_TOKEN`: Notion API token
-  - `NOTION_DB_ID`: Notion database ID
-  - `OPENAI_API_KEY`: OpenAI API Key
-  - `KAFKA_URL`: Kafka broker address
-  - `KAFKA_USERNAME`: Kafka username
-  - `KAFKA_PASSWORD`: Kafka password
-  - `MOESIF_APP_ID`: Moesif API monetization platform
+### Configure secrets
 
-### Start the development servers:
+Copy the template and fill blanks (never commit `.env`):
 
-```
-pnpm run dev
+```shell
+cp .env.example .env
 ```
 
-This will concurrently start the Next.js frontend and the Flask backend.
+You need at minimum `LDB_DATABASE_URL` (see below). Maintainers inject the full secret set from Infisical path `/leads-db` instead.
 
-## Frontend
+### Set up the database
 
-The frontend is built using Next.js and React. It provides a user interface for entering email, country, and industry preferences to subscribe for weekly updates.
+Postgres is required. Use a free hosted provider like [Neon](https://neon.tech), or run one locally. Set the connection string in `.env`:
 
-### Key files:
+```
+LDB_DATABASE_URL=postgresql://user:pass@host/db?sslmode=require
+```
 
-- `app/page.tsx`: The main page.
-- `utils/staticData.ts`: Contains static data for countries and industries.
+Apply migrations (SQL lives in `src/migrations`):
 
-## Backend
+```shell
+just leadsdb-migrate
+# or, without the just/Infisical wrapper:
+psql "$LDB_DATABASE_URL" -f src/migrations/001_create_extensions.sql   # ...repeat per file
+```
 
-The backend is built with Flask and provides various API endpoints for company data management and subscriber management.
+### Run the frontend
 
-### Key files:
+```shell
+pnpm dev   # http://localhost:3000
+```
 
-- `api/index.py`: The main Flask application file that defines the API routes and schedules background tasks.
-- `api/models`: All model classes.
+Sign-in uses magic links. With no `RESEND_API_KEY` set, magic links are logged to the server console (dev only); set `RESEND_API_KEY` to send real emails.
 
-## API Endpoints
+### Run the pipeline (Python engine)
 
-- `/api/heartbeat`: Returns a heartbeat response to check if the server is running.
-- `/api/v1/company-enrichment`: Retrieves company data from the Abstract API using a provided domain.
-- `/api/v1/scrape`: Scrapes a web page using the Abstract API.
-- `/api/v1/_system/daily_merge`: Performs a daily merge of data.
-- `/api/v1/_system/ingestions`: Returns daily new registered domains (NRDs).
-- `/api/v1/companies/<id>`: Retrieves a company by its ID.
-- `/api/v1/companies_by_name/<name>`: Retrieves a company by its name.
-- `/api/v1/companies`: Inserts a new company.
-- `/api/v1/subscribe`: Adds a new subscriber using the Notion API.
+```shell
+just leadsdb-run       # all processors in sequence
+just leadsdb-enrich    # stage 2
+just leadsdb-score     # stage 3 (needs LLM config, below)
+just leadsdb-promote   # stage 4
+```
 
-## GitHub Actions
+---
 
-The repository includes a GitHub Actions workflow for daily data updates. The workflow is defined in `.github/workflows/daily-updater.yml` and runs on a scheduled basis or can be triggered manually.
+## Environment variables
 
-## Todos
+See [`.env.example`](.env.example) for the full documented list with blanks. The core ones:
 
-- Use GCloud Build secret keys for the service account credential file
-- Finish building API governance system using Moesif
-- Set MOESIF_APP_ID in GCP
-- Migrate Cloud Build Python version to 3.12.1
+| Variable | Required | Purpose |
+|---|---|---|
+| `LDB_DATABASE_URL` | Yes | Postgres connection string |
+| `BETTER_AUTH_SECRET` | Yes (prod) | Auth session encryption. Generate: `openssl rand -base64 32` |
+| `BETTER_AUTH_URL` | Yes | Public base URL (e.g. `http://localhost:3000`) |
+| `RESEND_API_KEY` | Auth needs email | Sends magic links (unset = log to console, dev only) |
+| `LEADSDB_ADMIN_TOKEN` | Settings API | Gates the `/api/v1/settings` admin routes |
+
+---
+
+## BYOK & security model
+
+LeadsDB is **bring-your-own-key**. No AI provider is baked in. Your LLM endpoint, model, and API key are your choice.
+
+| What | Where | Encrypted? |
+|---|---|---|
+| LLM endpoint URL (`scorer_api_url`) | `settings` table | No — it's a URL |
+| LLM model name (`scorer_model`) | `settings` table | No — it's a model id |
+| LLM API key (`scorer_api_key`) | `settings` table | **Yes** — AES-256-GCM at rest |
+| Outreach transport key (`outreach_api_key`) | `settings` table | **Yes** — AES-256-GCM at rest |
+| Master encryption key | Env / Infisical | N/A — the key itself |
+
+Configure the scorer through the settings CLI or DB:
+
+```sql
+UPDATE settings SET text_value = 'https://api.openai.com/v1/chat/completions' WHERE key = 'scorer_api_url';
+UPDATE settings SET text_value = 'gpt-4o-mini' WHERE key = 'scorer_model';
+```
+
+Until `scorer_api_url` and `scorer_model` are set, the scorer logs once and idles.
+
+---
+
+## Outreach transports
+
+Outreach is vendor-agnostic. The `outreach_transport` setting selects the adapter:
+
+| Transport | What it does | Status |
+|---|---|---|
+| `noop` | Logs what it would send — no real email. **Default.** | ✅ Built-in |
+| `resend` | Live sends via the Resend HTTP API | ✅ Reference adapter |
+
+Add a provider by implementing `EmailTransport` in `engine/leadsdb_engine/transports/`, registering it, and setting `outreach_transport`. A fresh deploy cannot send cold email — default is log-only.
+
+---
+
+## Repo layout
+
+```
+leads-db/
+├── src/
+│   ├── app/            # Next.js pages + API routes
+│   │   └── api/        #   v1, v2 route handlers
+│   ├── lib/            # frontend libs (api client, auth)
+│   ├── migrations/     # SQL migrations (001–009)
+│   └── wip/            # operator-shell pages (old repo, being wired in)
+├── engine/
+│   └── leadsdb_engine/
+│       ├── processors/ # certstream, enricher, scorer, promoter, dispatcher
+│       ├── transports/ # email transport adapters (noop, resend)
+│       ├── crypto.py   # AES-GCM settings encryption
+│       ├── db.py       # Postgres layer + settings read/write
+│       ├── crm.py      # CLI for contacts/deals/annotations
+│       └── pii.py      # Safe Harbor masking
+├── scripts/            # Guardrails, CI helpers, migrations
+├── .mise.toml          # pinned toolchain (Node/Python/uv/just/vercel)
+├── .env.example        # documented env template (fork-safe)
+└── justfile            # task runner (CRM, pipeline, CI, deploy)
+```
+
+---
+
+## CRM
+
+Built-in multi-tenant CRM with Safe Harbor PII masking. Contacts, companies, deals, annotations, social links — all with soft deletes and workspace isolation.
+
+```shell
+just crm-add "jane@example.com" --name "Jane Doe"     # add a lead (PII masked on read)
+just crm-list                                          # list (masked by default)
+just crm-list --reveal                                 # full PII (use with care)
+just crm-deal-add "Q3 retainer" --value 12000         # create a deal
+just crm-annotation-add contact 42 linkedin '{"headline":"CTO"}'  # enrich
+```
+
+---
+
+## DevSecOps & tooling
+
+Every push runs a security and quality gate (lint, typecheck, tests, SAST, IOC scan, whitespace guard).
+
+| Tool | Role |
+|---|---|
+| [mise](.mise.toml) | Pinned runtimes/tools for reproducible builds |
+| [Infisical](https://infisical.com) | Maintainer secret store (path `/leads-db`) |
+| [fnox](fnox.toml.example) | Optional passkey-gated access to Infisical |
+| guard scripts | PII/secret/whitespace enforcement in CI |
+
+```shell
+just install-hooks    # install git hooks
+just ci-check         # run the local gate before pushing
+```
+
+Self-hosters skip Infisical/fnox entirely and use `.env`.
+
+---
+
+## Contributing
+
+Trunk-based branching. Every push must pass the CI gate.
 
 ## License
 
-This project is licensed under the MIT License.
+[MIT](LICENSE) — publicly MIT-licensed since 2024.

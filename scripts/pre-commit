@@ -1,0 +1,136 @@
+#!/usr/bin/env bash
+# Pre-commit: scan staged files for secrets, PII, internal framing, and reader descriptions.
+# This is the CANONICAL source; the copy at docs/office-ops/ is stale.
+# Patterns live in scripts/silver-gate-patterns.json.
+# Usage: `just install-hooks` links this to .git/hooks/pre-commit.
+set -euo pipefail
+
+HOOK_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# --- banned package-manager guard (justfile + script changes) ---
+STAGED_TOOLING=$(git diff --cached --name-only --diff-filter=ACM 2>/dev/null | grep -E '(^justfile$|^scripts/|^package.json$)' || true)
+if [ -n "$STAGED_TOOLING" ]; then
+  if ! bash scripts/guard-pnpm.sh < justfile 2>/dev/null; then
+    echo ""
+    echo "  🛑  Banned package manager (npx/npm/bun/bunx) detected in justfile."
+    echo "      Use pnpm dlx instead of npx."
+    echo ""
+    exit 1
+  fi
+fi
+
+# --- .env* file staging guard ---
+STAGED_ENV=$(git diff --cached --name-only --diff-filter=A 2>/dev/null | grep -E '(^|/)\.env' || true)
+if [ -n "$STAGED_ENV" ]; then
+  echo ""
+  echo "  🛑  .env file staged for commit."
+  echo "      Never commit .env files. Remove with: git rm --cached $STAGED_ENV"
+  echo ""
+  exit 1
+fi
+
+STAGED_ENV_READS=$(git diff --cached --name-only --diff-filter=ACM 2>/dev/null | xargs grep -l '\.env' 2>/dev/null | grep -vE '(node_modules/|\.code-intel-mcp/)' || true)
+if [ -n "$STAGED_ENV_READS" ]; then
+  echo ""
+  echo "  ⚠  Staged files reference .env:"
+  echo "$STAGED_ENV_READS" | while read -r f; do echo "      $f"; done
+  echo "      Verify these don't hardcode or expose credential paths."
+  echo ""
+fi
+
+# --- silver-gate scan ---
+# Collect staged text files (same filters as before)
+STAGED=$(git diff --cached --name-only --diff-filter=ACM 2>/dev/null | grep -vE '\.(sql|lock|log|png|jpg|jpeg|gif|svg|ico|woff2?|ttf|eot|mp4|mov|webm|pdf)$' | grep -vE '(pnpm-lock\.yaml|package-lock\.json|\.code-intel-mcp/)' || true)
+
+if [ -z "$STAGED" ]; then
+  exit 0
+fi
+
+HAS_BLOCKER=0
+
+# Load patterns from shared config
+PATTERNS_FILE="$HOOK_DIR/silver-gate-patterns.json"
+if [ ! -f "$PATTERNS_FILE" ]; then
+  # Fallback to inline patterns if config file missing
+  PATTERNS=(
+    'AKIA[0-9A-Z]{16}|block|AWS Access Key'
+    '\bgh[pousr]_[A-Za-z0-9_]{36,}\b|block|GitHub Token'
+    'xox[baprs]-[A-Za-z0-9-]{10,}|block|Slack Token'
+    'AIza[0-9A-Za-z_-]{35}|block|Google API Key'
+    '[sr]k_(live|test)_[A-Za-z0-9]{24,}|block|Stripe Key'
+    'eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}|block|JWT Token'
+    '-----BEGIN (RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----|block|Private Key'
+    '\b(api[_-]?key|apikey|secret|token)\s*[:=]\s*['"'"'"][^'"'"'"]{8,}['"'"'"]|block|Key Assignment'
+    '\b\d{3}-\d{2}-\d{4}\b|warn|SSN (US)'
+    '\b\d{3}[-.]?\d{3}[-.]?\d{4}\b|warn|Phone Number'
+    '\btrainee\b|warn|Internal: trainee'
+    '\bapprentice\b|warn|Internal: apprentice'
+    '\bIke\b|warn|Personal name: Ike'
+    '\bJamila\b|warn|Client name: Jamila'
+    '\bcompany rule\b|warn|Internal: company rule'
+    '\b(high school|middle school|college|teen)\s+(student|kid|person|reader)\b|block|Reader description'
+    '\b(written for|designed for|aimed at) a (high school|teen|college)\s+(student|kid|reader)\b|block|Reader description'
+    '\byour trainer\b|block|AI-speak: your trainer'
+  )
+else
+  # Build patterns array from JSON config using node
+  PATTERNS_JSON=$(node -e "
+    const cfg = require('$PATTERNS_FILE');
+    const pats = [];
+    for (const cat of ['pii', 'internal_framing', 'family_references', 'reader_description']) {
+      for (const p of (cfg[cat] || [])) {
+        pats.push(p.pattern + '|' + p.severity + '|' + (p.note || p.name));
+      }
+    }
+    process.stdout.write(JSON.stringify(pats));
+  ")
+
+  # Convert JSON array to bash array
+  IFS=$'\n' read -r -d '' -a PATTERNS < <(node -e "
+    const cfg = require('$PATTERNS_FILE');
+    for (const cat of ['pii', 'internal_framing', 'family_references', 'reader_description']) {
+      for (const p of (cfg[cat] || [])) {
+        console.log(p.pattern + '|' + p.severity + '|' + (p.note || p.name));
+      }
+    }
+  " && printf '\0')
+fi
+
+TEMP=$(mktemp)
+trap 'rm -f "$TEMP"' EXIT
+
+for FILE in $STAGED; do
+  [ -f "$FILE" ] || continue
+
+  for P in "${PATTERNS[@]}"; do
+    IFS='|' read -r REGEX SEVERITY LABEL <<< "$P"
+
+    if ! git show ":$FILE" | rg --no-heading --line-number -iP "$REGEX" > "$TEMP" 2>/dev/null; then
+      continue
+    fi
+
+    if [ "$SEVERITY" = "block" ]; then
+      HAS_BLOCKER=1
+      echo ""
+      echo "  ❌ BLOCKED  $LABEL in $FILE"
+    else
+      echo ""
+      echo "  ⚠  $LABEL in $FILE"
+    fi
+
+    while IFS= read -r line; do
+      echo "      $line"
+    done < "$TEMP"
+  done
+done
+
+if [ "$HAS_BLOCKER" -eq 1 ]; then
+  echo ""
+  echo "  🛑  Silver-gate violations detected. Commit blocked."
+  echo "      Blocked patterns: reader descriptions, 'your trainer', PII secrets."
+  echo "      Skip with: git commit --no-verify  (emergency only)"
+  echo ""
+  exit 1
+fi
+
+exit 0

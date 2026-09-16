@@ -1,0 +1,33 @@
+default_provider = "age"
+
+[tools]
+node = "lts"
+pnpm = "lts"
+
+[profiles.staging.tools]
+semgrep = "lts"
+
+[providers.secure]
+type = "fido2"
+credential_id = "5bb9ae21d9993cf781e9ec2fd1a08c75152502674c079d78b81cdff98e794b6d99ecb2dd553c61d9b542322bea091aa6f80b8ae7425b58da4c7f0e7c4a14dc32"
+salt = "27099eba20b67d5754fe2b19dafb9958e95cb59b6560984d245b07a1e52fcbc3"
+rp_id = "fnox.secure"
+
+[providers.age]
+type = "age"
+recipients = ["age1wdtap0ucqfxuucpreq64p8wqyjetl02xjy05w70kmrke2y9fjvlspulrrp"] # public recipient
+
+[providers.infisical]
+type = "infisical"
+project_id = "90700f81-c94e-4eb5-bf69-f52d814e96de"
+environment = "Development"
+path = "/leads-db"
+
+[profiles.staging.providers]
+infisical = { type = "infisical", project_id = "90700f81-c94e-4eb5-bf69-f52d814e96de", environment = "Staging", path = "/leads-db" }
+
+[profiles.production.providers]
+infisical = { type = "infisical", project_id = "90700f81-c94e-4eb5-bf69-f52d814e96de", environment = "Production", path = "/leads-db" }
+
+[secrets]
+INFISICAL_TOKEN= { provider = "age", value = "YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBmWVloQWNzT0NpcHgrU1pmTGxUNFM4VVFqRkxVbUVXZndjMVBwNTB4eUdFCmh1dGttUkpzdXVyMGE5eVBmaWdSY20yM0p1c1hwR1c2SktrbnFKL3lMdk0KLT4gfjA/bE5cLWdyZWFzZSA3aGxHJTBMCm40R1hFTmlQek10OWkybwotLS0gWmtGT2RaaEFLZDVwQW5FUnJxU0VSWkxMbmFzbWFEUkEzaHptbjFoVlVBbwrQ8GTRDOlLlNBwdlvQ5Ya6Z7Z1XKnYyOsGb5MpDgVxquwTj8/HkE6YhJ2R7ABE2BDlr2qZBAhcmab65sDSWfL4D62A+velACpqpJgL3gMPmfkNmnhwqy3UOEBf0LqaizjuT4dnc+pC7WjTmlL04A1z8rijVBaN0Dl0EV1LSG/WthQB4Dh9T+rEg5pyfeQ3DxxMB7vLLqnRT+WElltJ0ADxQdXh7WP0vCviFupqkHIy2AtWedDhoPsWdgu/h5p+SwQHeQlqz2zVsGRo+quw9qQ4j6gwmTXv/AfQtjLE1uc9zX6k8W4/NjR5b1LWA4PbNAVyoNMaDGb+ceFxQoGufzUD8ovZz6/hgp6uSrUMiAoUyfNb+kZaOE8iy6Tv0RK5EbBkXAj4VbjvEukkZM0Egx8SpCk6kW1aCktNYLjOGukeiaO+RfppxGjwxvo0Yed++bl/voqEnqIIxAiSmu33MwDNzlh8a2y/Yrjrxgelkk7SAAVloL+6z7OH4BaFM06K/AqDaNzZhDKT+RFX3ndueEMcGR9jdLLBqEndSAub4ceFGOqzu8EtBrSSZS1Wj5oCGmjb6mOqoX/Z8E4dsFAG0dxNKCzjD0iZmx/VLSi41omA3Hi9fQ==" }
