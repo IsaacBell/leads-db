@@ -38,6 +38,7 @@ from leadsdb_engine.db import (
     connect,
     get_settings_map,
 )
+from leadsdb_engine.net_guard import BlockedHost, fetch_public
 from leadsdb_engine.processors.base import EnrichmentProcessor
 
 # ------------------------------------------------------------------
@@ -139,9 +140,8 @@ class DomainEnricher(EnrichmentProcessor):
     # HTTP fetch
     # ------------------------------------------------------------------
 
-    @staticmethod
     async def _fetch_page(
-        domain: str, client: httpx.AsyncClient, *, http_timeout: float = HTTP_TIMEOUT
+        self, domain: str, client: httpx.AsyncClient, *, http_timeout: float = HTTP_TIMEOUT
     ) -> dict[str, Any]:
         """Fetch a domain's landing page. Returns status, title, and a body preview."""
         result: dict[str, Any] = {
@@ -152,9 +152,9 @@ class DomainEnricher(EnrichmentProcessor):
 
         for scheme in ("https://", "http://"):
             try:
-                resp = await client.get(
+                resp = await fetch_public(
+                    client,
                     f"{scheme}{domain}",
-                    follow_redirects=True,
                     timeout=http_timeout,
                     headers={
                         "User-Agent": "Mozilla/5.0 (compatible; LeadsDBEnricher/1.0; +https://leads-db.com)",
@@ -180,6 +180,9 @@ class DomainEnricher(EnrichmentProcessor):
 
                 return result
 
+            except BlockedHost:
+                self.logger.info("non-public host skipped", domain=domain)
+                continue
             except (httpx.TimeoutException, httpx.ConnectError, httpx.RemoteProtocolError):
                 continue
             except Exception:
