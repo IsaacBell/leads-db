@@ -1,0 +1,229 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install pnpm deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install just
+        uses: extractions/setup-just@v2
+
+      - name: TypeScript typecheck
+        run: pnpm exec tsc --noEmit
+
+      - name: CI check (syntax + types + shell)
+        run: just ci-check
+
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install pnpm deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install just
+        uses: extractions/setup-just@v2
+
+      - name: ruff (Python lint)
+        run: just ci-ruff
+
+      - name: bandit (Python security)
+        run: just ci-bandit
+
+      - name: shellcheck
+        run: |
+          shellcheck scripts/*.sh
+
+  test-python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install just
+        uses: extractions/setup-just@v2
+
+      - name: Install Python deps
+        run: cd engine && uv sync --group dev
+
+      - name: Run Python tests
+        run: just ci-engine-test
+
+      - name: Upload Python test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-test-results
+          path: engine/test-results.xml
+
+  test-js:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install pnpm deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Install just
+        uses: extractions/setup-just@v2
+
+      - name: Run TypeScript tests
+        run: just ci-js-test
+
+      - name: Upload JS test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: js-test-results
+          path: test-results-js.xml
+
+  semgrep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install just
+        uses: extractions/setup-just@v2
+
+      - name: Run Semgrep SAST
+        uses: semgrep/semgrep-action@v1
+        with:
+          config: .semgrep.yml p/owasp-top-ten p/python p/typescript p/react
+        env:
+          SEMGREP_TIMEOUT: 120
+
+  ioc:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install just
+        uses: extractions/setup-just@v2
+
+      - name: IOC scan (obfuscation patterns semgrep can't catch)
+        run: just ci-ioc
+
+  silver-gate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install just
+        uses: extractions/setup-just@v2
+
+      - name: Silver-gate PII/secret/reader-description scan
+        run: just ci-silver-gate
+
+  whitespace-integrity:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install just
+        uses: extractions/setup-just@v2
+
+      - name: Whitespace integrity (trailing whitespace, invisible Unicode, homoglyphs)
+        run: just ci-whitespace
+
+  # ──────────────────────────────────────────────
+  # SCA + secrets — run on every push/PR to main
+  # ──────────────────────────────────────────────
+
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install pnpm deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install just
+        uses: extractions/setup-just@v2
+
+      - name: Python SCA
+        run: |
+          cd engine && uvx pip-audit
+
+      - name: JS SCA
+        run: |
+          pnpm audit --audit-level=high
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2

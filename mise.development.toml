@@ -1,0 +1,120 @@
+[env]
+NODE_ENV = "development"
+
+[tools]
+oxlint = "1.81.0"
+"npm:@axe-core/cli" = "latest"
+"npm:@lhci/cli" = "latest"
+"npm:pa11y" = "latest"
+"aqua:asciinema/asciinema" = "latest"
+
+# ==========================================
+# PYTHON / ENGINE
+# ==========================================
+
+[tasks."engine:sync"]
+description = "Sync Python dependencies via uv"
+dir = "engine"
+run = "uv sync"
+
+[tasks."engine:lock"]
+description = "Lock Python dependencies via uv"
+dir = "engine"
+run = "uv lock"
+
+[tasks."engine:run"]
+description = "Run an arbitrary uv command in the engine directory"
+# CLI Usage: mise run engine:run -- pytest
+dir = "engine"
+run = "uv run"
+
+
+# --- session capture (asciinema) ---------------------------------------------
+# Record a command's terminal session to
+# recordings/<ts>-<name>.cast (asciicast-v3)
+# -----------------------------------------------------------------------------
+
+[tasks.record-terminal]
+usage = '''
+arg "[cmd]" help="Command or file to run"
+arg "[outfile-name]" help="Name of the file to write to."
+'''
+run = '''
+asciinema rec -c "{{cmd}}" "recordings/$(date +%Y%m%d-%H%M%S)-{{name}}.cast"
+'''
+
+# original inspiration from: https://github.com/amalshehu/pexels-skill
+[tasks.img-search-pexels]
+usage = '''
+arg "[query]" help="Search query"
+flag "--count" {
+	count=true
+	help="Results to return. Min 15, max 80."
+	num_min=15
+	num_max=80
+}
+flag "--orientation" {
+	help "Desired photo orientation. Options: landscape, portrait or square."
+	choices landscape portrait square
+}
+flag "-c --color" {
+	help "Desired photo color. "
+	choices red orange yellow green turquoise blue violet pink brown black gray white.
+}
+flag "-v --verbose" help="Enable chatty output"
+'''
+
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Handle verbosity
+if [[ "${usage_verbose?}" -ge 2 ]]; then
+  set -x
+elif [[ "${usage_verbose?}" -ge 1 ]]; then
+  export VERBOSE=1
+fi
+
+QUERY="${usage_query?}"
+COUNT="${usage_count:-15}"
+ORIENTATION="${usage_orientation:-}"
+COLOR="${usage_color:-}"
+
+PEXELS_API_KEY="${PEXELS_API_KEY:?Set PEXELS_API_KEY (get one free at https://www.pexels.com/api/)}"
+
+if [ "$COUNT" -gt 80 ]; then
+  COUNT=80
+elif [ "$COUNT" -lt 15 ]; then
+  COUNT=15
+fi
+
+ARGS=(-G "https://api.pexels.com/v1/search" --data-urlencode "query=${QUERY}" --data-urlencode "per_page=${COUNT}")
+if [ -n "$ORIENTATION" ]; then
+  ARGS+=(--data-urlencode "orientation=${ORIENTATION}")
+fi
+if [ -n "$COLOR" ]; then
+  ARGS+=(--data-urlencode "color=${COLOR}")
+fi
+
+RESP="$(curl -s -w $'\n%{http_code}' "${ARGS[@]}" -H "Authorization: ${PEXELS_API_KEY}")"
+CODE="${RESP##*$'\n'}"
+BODY="${RESP%$'\n'*}"
+
+if [ "$CODE" != "200" ]; then
+  echo "Pexels API error (HTTP $CODE):" >&2
+  printf '%s' "$BODY" | jq '.error? // empty' >&2 2>/dev/null || true
+  printf '%s' "$BODY" >&2
+  exit 1
+fi
+
+printf '%s' "$BODY" | jq '{
+  total_results,
+  photos: [.photos[] | {
+    id,
+    alt,
+    photographer,
+    url,
+    src: { large: .src.large, original: .src.original, medium: .src.medium }
+  }]
+}'
+'''

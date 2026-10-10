@@ -1,0 +1,193 @@
+[tools]
+node = "24"
+rust = "1.98.1"
+python = "3.12.14"
+pnpm = "10.34.5"
+uv = "0.12.10"
+fnox = "latest"
+trivy = "latest"
+gitleaks = "latest"
+
+[env]
+# Global default profile for secrets (overridden in tasks or local env)
+FNOX_PROFILE = "dev"
+
+# ==========================================
+# HOOKS & GUARDRAILS
+# ==========================================
+
+[tasks."hooks:install"]
+description = "Install pre-commit hook from scripts/pre-commit"
+run = """
+ln -sf scripts/pre-commit .git/hooks/pre-commit
+echo "  ✓ pre-commit hook installed (scripts/pre-commit)"
+"""
+
+# ==========================================
+# CRM CLI
+# ==========================================
+
+[tasks."crm:company:add"]
+description = "Add a company to CRM"
+# CLI Usage: mise run crm:company:add -- --name "Acme Corp"
+run = "uv run -m leadsdb_engine.crm company add"
+
+[tasks."crm:add"]
+description = "Add or update a contact"
+# CLI Usage: mise run crm:add -- --email user@example.com
+run = "uv run -m leadsdb_engine.crm add"
+
+[tasks."crm:get"]
+description = "Look up a contact by ID or email"
+# CLI Usage: mise run crm:get -- --id 123 --reveal
+run = "uv run -m leadsdb_engine.crm get"
+
+[tasks."crm:list"]
+description = "List CRM contacts"
+run = "uv run -m leadsdb_engine.crm list"
+
+[tasks."crm:status"]
+description = "Update contact status"
+# CLI Usage: mise run crm:status -- --id 123 --status qualified
+run = "uv run -m leadsdb_engine.crm status"
+
+[tasks."crm:contact-type"]
+description = "Flip a contact between lead and contact"
+# CLI Usage: mise run crm:contact-type -- --id 123 --type contact
+run = "uv run -m leadsdb_engine.crm contact-type"
+
+[tasks."crm:delete"]
+description = "Soft-delete a contact"
+# CLI Usage: mise run crm:delete -- --id 123
+run = "uv run -m leadsdb_engine.crm delete"
+
+[tasks."crm:social:add"]
+description = "Add a social link for a contact"
+# CLI Usage: mise run crm:social:add -- --contact-id 123 --platform github --url https://...
+run = "uv run -m leadsdb_engine.crm social add"
+
+[tasks."crm:social:list"]
+description = "List social links for a contact"
+# CLI Usage: mise run crm:social:list -- --contact-id 123
+run = "uv run -m leadsdb_engine.crm social list"
+
+# ==========================================
+# DEALS & ANNOTATIONS
+# ==========================================
+
+[tasks."crm:deal:add"]
+description = "Create a new deal"
+# CLI Usage: mise run crm:deal:add -- --title "Enterprise SLA"
+run = "uv run -m leadsdb_engine.crm deal add"
+
+[tasks."crm:deal:get"]
+description = "Show deal details"
+# CLI Usage: mise run crm:deal:get -- --id 456
+run = "uv run -m leadsdb_engine.crm deal get"
+
+[tasks."crm:deal:list"]
+description = "List all deals"
+run = "uv run -m leadsdb_engine.crm deal list"
+
+[tasks."crm:deal:stage"]
+description = "Move deal to a new stage"
+# CLI Usage: mise run crm:deal:stage -- --id 456 --stage proposal
+run = "uv run -m leadsdb_engine.crm deal stage"
+
+[tasks."crm:deal:delete"]
+description = "Soft-delete a deal"
+# CLI Usage: mise run crm:deal:delete -- --id 456
+run = "uv run -m leadsdb_engine.crm deal delete"
+
+[tasks."crm:annotation:add"]
+description = "Add JSON annotation"
+# CLI Usage: mise run crm:annotation:add -- --target-type company --target-id 123 --key sentiment --value '"positive"'
+run = "uv run -m leadsdb_engine.crm annotation add"
+
+[tasks."crm:annotation:list"]
+description = "List annotations"
+run = "uv run -m leadsdb_engine.crm annotation list"
+
+[tasks."crm:annotation:delete"]
+description = "Soft-delete an annotation"
+# CLI Usage: mise run crm:annotation:delete -- --id 789
+run = "uv run -m leadsdb_engine.crm annotation delete"
+
+[tasks."crm:promote"]
+description = "Promote scored domains into CRM companies"
+run = "uv run -m leadsdb_engine.processors.lead_promoter"
+
+[tasks."crm:outreach"]
+description = "Dispatch sequence outreach for promoted companies"
+run = "uv run -m leadsdb_engine.processors.sequence_dispatcher"
+
+# ==========================================
+# EXA INTEGRATION
+# ==========================================
+
+[tasks."exa:search"]
+description = "Search Exa API"
+# CLI Usage: mise run exa:search -- "fintech startups"
+run = "fnox exec -- uv run -m leadsdb_engine.exa search"
+
+[tasks."exa:discover"]
+description = "Discover contacts for a company domain"
+# CLI Usage: mise run exa:discover -- "stripe.com"
+run = "fnox exec -- uv run -m leadsdb_engine.exa discover-contacts"
+
+# ==========================================
+# PIPELINE STAGES (FN-OX INTEGRATED)
+# ==========================================
+
+[tasks."leadsdb:run"]
+description = "Run any arbitrary command with decrypted secrets injected"
+# CLI Usage: mise run leadsdb:run -- uv run python -m leadsdb_engine.processors.certstream_ingestor
+run = "fnox exec --"
+
+[tasks."leadsdb:ingest"]
+description = "Stage 1: Ingest raw domains from certstream WebSocket"
+run = "fnox exec -- uv run python -m leadsdb_engine.processors.certstream_ingestor"
+
+[tasks."leadsdb:enrich"]
+description = "Stage 2: Enrich raw domains with DNS/HTTP classification"
+run = "fnox exec -- uv run python -m leadsdb_engine.processors.domain_enricher"
+
+[tasks."leadsdb:score"]
+description = "Stage 3: Score promising domains with LLM"
+run = "fnox exec -- uv run python -m leadsdb_engine.processors.entity_scorer"
+
+[tasks."leadsdb:promote"]
+description = "Stage 4: Promote scored domains into CRM companies"
+run = "fnox exec -- uv run python -m leadsdb_engine.processors.lead_promoter"
+
+[tasks."leadsdb:outreach"]
+description = "Stage 5: Dispatch sequence outreach for promoted companies"
+run = "fnox exec -- uv run python -m leadsdb_engine.processors.sequence_dispatcher"
+
+# ==========================================
+# DATABASE & DEPLOYMENT
+# ==========================================
+
+[tasks."leadsdb:migrate"]
+description = "Apply migrations to Neon database"
+run = "fnox exec -- bash apps/leads-db/scripts/migrate.sh"
+
+[tasks."leadsdb:reset"]
+description = "Reset database and re-run migrations"
+run = "fnox exec -- bash apps/leads-db/scripts/reset.sh"
+
+[tasks."leadsdb:seed"]
+description = "Seed sample domain events and classifications"
+dir = "engine"
+run = "fnox exec -- uv run python scripts/seed.py"
+
+[tasks."leadsdb:deploy"]
+description = "Deploy Next.js app to Vercel Production (Requires Admin/Hardware Key)"
+run = "pnpm build && fnox exec -p admin -- vercel deploy --prod"
+
+[tasks."leadsdb:check"]
+description = "Quick smoke test: verify DB connectivity and table count"
+dir = "engine"
+run = """
+fnox exec -- uv run python -c 'import os, psycopg; conn = psycopg.connect(os.environ["LDB_DATABASE_URL"]); cur = conn.cursor(); cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = %s", ("public",)); print("Tables:", [r[0] for r in cur.fetchall()]); cur.execute("SELECT COUNT(*) FROM domain_events"); print("Domain events:", cur.fetchone()[0]); cur.execute("SELECT COUNT(*) FROM domain_classifications"); print("Classifications:", cur.fetchone()[0])'
+"""
